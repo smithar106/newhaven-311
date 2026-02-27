@@ -279,8 +279,9 @@ def admin_export():
                     headers={'Content-Disposition': f'attachment;filename={fname}'})
 
 
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     port = int(os.environ.get('PORT', 5007))
     print(f"New Haven 311 running on http://localhost:{port}")
     app.run(host='0.0.0.0', port=port, debug=True)
