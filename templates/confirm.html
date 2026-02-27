@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Report Submitted — New Haven 311</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C;min-height:100vh}
+  .header{background:#00356B;color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px}
+  .seal{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .header-text h1{font-size:1.25rem;font-weight:700}
+  .header-text p{font-size:.72rem;opacity:.8;margin-top:1px}
+
+  .container{max-width:520px;margin:0 auto;padding:24px 16px}
+
+  .success-card{background:#fff;border-radius:16px;padding:28px 20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.09);margin-bottom:16px}
+  .checkmark{width:72px;height:72px;border-radius:50%;background:#E6F7EF;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px}
+  .success-card h2{font-size:1.3rem;font-weight:700;color:#00356B;margin-bottom:6px}
+  .success-card p{font-size:.88rem;color:#718096;line-height:1.5}
+
+  .tracking-box{background:#F7FAFF;border:2px solid #00356B;border-radius:12px;padding:16px;text-align:center;margin:20px 0 0}
+  .tracking-box .label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:6px}
+  .tracking-number{font-size:1.4rem;font-weight:800;color:#00356B;letter-spacing:1px;cursor:pointer}
+  .copy-hint{font-size:.72rem;color:#A0AEC0;margin-top:4px}
+
+  .detail-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:12px}
+  .detail-card h3{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:12px}
+  .detail-row{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+  .detail-row:last-child{margin-bottom:0}
+  .detail-icon{font-size:16px;width:22px;flex-shrink:0;margin-top:1px}
+  .detail-label{font-size:.75rem;color:#718096;min-width:60px}
+  .detail-value{font-size:.85rem;font-weight:600;color:#1A202C;flex:1;word-break:break-word}
+
+  .timeline{margin:0}
+  .tl-step{display:flex;gap:12px;position:relative;padding-bottom:16px}
+  .tl-step:last-child{padding-bottom:0}
+  .tl-left{display:flex;flex-direction:column;align-items:center}
+  .tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;z-index:1}
+  .tl-dot.done{background:#00356B;color:#fff}
+  .tl-dot.pending{background:#E2E8F0;color:#A0AEC0}
+  .tl-line{flex:1;width:2px;background:#E2E8F0;margin:2px 0}
+  .tl-step:last-child .tl-line{display:none}
+  .tl-content{padding-top:4px}
+  .tl-title{font-size:.85rem;font-weight:600;color:#1A202C}
+  .tl-desc{font-size:.75rem;color:#718096;margin-top:2px}
+
+  .btn{display:block;width:100%;border-radius:12px;padding:15px;font-size:1rem;font-weight:700;text-align:center;text-decoration:none;border:none;cursor:pointer;margin-bottom:10px}
+  .btn-primary{background:#00356B;color:#fff}
+  .btn-secondary{background:#fff;color:#00356B;border:2px solid #00356B}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="seal">⭐</div>
+  <div class="header-text">
+    <h1>New Haven 311</h1>
+    <p>Non-Emergency City Services</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="success-card">
+    <div class="checkmark">✅</div>
+    <h2>Report Submitted!</h2>
+    <p>Thank you for helping keep Dallas safe and clean. Your report has been received and will be reviewed shortly.</p>
+    <div class="tracking-box" onclick="copyTracking()">
+      <div class="label">Your Tracking Number</div>
+      <div class="tracking-number" id="tracking-num">{{ sub.tracking_number }}</div>
+      <div class="copy-hint">Tap to copy</div>
+    </div>
+  </div>
+
+  <div class="detail-card">
+    <h3>Report Details</h3>
+    <div class="detail-row">
+      <span class="detail-icon">📋</span>
+      <span class="detail-label">Category</span>
+      <span class="detail-value">
+        {% if cat %}{{ cat.icon }} {% endif %}{{ sub.category_label }}
+      </span>
+    </div>
+    {% if sub.address %}
+    <div class="detail-row">
+      <span class="detail-icon">📍</span>
+      <span class="detail-label">Location</span>
+      <span class="detail-value">{{ sub.address[:80] }}{% if sub.address|length > 80 %}…{% endif %}</span>
+    </div>
+    {% endif %}
+    {% if sub.description %}
+    <div class="detail-row">
+      <span class="detail-icon">📝</span>
+      <span class="detail-label">Details</span>
+      <span class="detail-value">{{ sub.description[:120] }}{% if sub.description|length > 120 %}…{% endif %}</span>
+    </div>
+    {% endif %}
+    <div class="detail-row">
+      <span class="detail-icon">🕐</span>
+      <span class="detail-label">Submitted</span>
+      <span class="detail-value">{{ sub.created_at[:16] }}</span>
+    </div>
+    <div class="detail-row" style="margin-bottom:0">
+      <span class="detail-icon">📊</span>
+      <span class="detail-label">Status</span>
+      <span class="detail-value" style="color:#286DC0;font-weight:700">{{ sub.status }}</span>
+    </div>
+  </div>
+
+  <div class="detail-card">
+    <h3>What Happens Next</h3>
+    <div class="timeline">
+      <div class="tl-step">
+        <div class="tl-left"><div class="tl-dot done">✓</div><div class="tl-line"></div></div>
+        <div class="tl-content"><div class="tl-title">Submitted</div><div class="tl-desc">Your report is in the system</div></div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-left"><div class="tl-dot pending">2</div><div class="tl-line"></div></div>
+        <div class="tl-content"><div class="tl-title">In Review</div><div class="tl-desc">Staff reviews and categorizes your report</div></div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-left"><div class="tl-dot pending">3</div><div class="tl-line"></div></div>
+        <div class="tl-content"><div class="tl-title">Assigned</div><div class="tl-desc">Routed to the right city department</div></div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-left"><div class="tl-dot pending">4</div><div class="tl-line"></div></div>
+        <div class="tl-content"><div class="tl-title">Resolved</div><div class="tl-desc">Issue addressed and closed</div></div>
+      </div>
+    </div>
+  </div>
+
+  <a href="/track?tracking={{ sub.tracking_number }}" class="btn btn-primary">Track This Report</a>
+  <a href="/" class="btn btn-secondary">Report Another Issue</a>
+
+</div>
+
+<script>
+function copyTracking() {
+  const num = document.getElementById('tracking-num').textContent;
+  navigator.clipboard.writeText(num).then(() => {
+    const hint = document.querySelector('.copy-hint');
+    hint.textContent = 'Copied! ✓';
+    hint.style.color = '#286DC0';
+    setTimeout(() => { hint.textContent = 'Tap to copy'; hint.style.color = ''; }, 2000);
+  });
+}
+</script>
+</body>
+</html>

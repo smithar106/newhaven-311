@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>New Haven 311</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C;min-height:100vh}
+
+  /* ── header ── */
+  .header{background:#00356B;color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+  .seal{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .header-text h1{font-size:1.25rem;font-weight:700;letter-spacing:.3px}
+  .header-text p{font-size:.72rem;opacity:.8;margin-top:1px}
+
+  /* ── city hero banner ── */
+  .city-hero{
+    height:160px;
+    background:
+      linear-gradient(rgba(0,53,107,.55), rgba(0,53,107,.78)),
+      url('https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&q=80') center/cover no-repeat;
+    display:flex;flex-direction:column;justify-content:flex-end;padding:16px;
+    position:relative;overflow:hidden;
+  }
+  .city-hero-alt{
+    background:
+      linear-gradient(rgba(0,53,107,.55), rgba(0,53,107,.78)),
+      url('https://images.unsplash.com/photo-1562516155-e0c1ee44059b?w=800&q=80') center/cover no-repeat;
+  }
+  .hero-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7);margin-bottom:4px}
+  .hero-title{font-size:1.35rem;font-weight:800;color:#fff;line-height:1.2}
+  .hero-sub{font-size:.78rem;color:rgba(255,255,255,.8);margin-top:4px}
+  .hero-tabs{display:flex;gap:8px;margin-top:12px}
+  .hero-tab{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:20px;padding:5px 14px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none}
+  .hero-tab.active{background:#fff;color:#00356B}
+
+  /* ── nav tabs ── */
+  .tabs{display:flex;background:#002a54;border-bottom:1px solid rgba(255,255,255,.12)}
+  .tab{flex:1;padding:10px 4px;text-align:center;color:rgba(255,255,255,.6);font-size:.78rem;font-weight:500;cursor:pointer;border:none;background:none;transition:all .2s}
+  .tab.active{color:#fff;border-bottom:2px solid #63AAFF;font-weight:700}
+
+  /* ── views ── */
+  .view{display:none;padding:16px;max-width:520px;margin:0 auto}
+  .view.active{display:block}
+
+  /* ── category grid ── */
+  .section-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#718096;margin-bottom:12px}
+  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .cat-card{background:#fff;border-radius:12px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;border:2px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:all .18s;-webkit-tap-highlight-color:transparent}
+  .cat-card:active{transform:scale(.96)}
+  .cat-card.selected{border-color:#00356B;background:#EBF0FF}
+  .cat-icon{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .cat-label{font-size:.74rem;font-weight:600;text-align:center;color:#2D3748;line-height:1.3}
+
+  /* ── selected badge ── */
+  .selected-badge{background:#00356B;color:#fff;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .selected-badge .badge-icon{font-size:22px}
+  .selected-badge .badge-label{flex:1;font-size:.95rem;font-weight:600}
+  .change-btn{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:.75rem;padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:600}
+
+  /* ── form sections ── */
+  .form-section{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+  .form-section h3{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+  label{display:block;font-size:.82rem;font-weight:600;color:#2D3748;margin-bottom:5px}
+  input[type=text],input[type=email],input[type=tel],textarea{width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:11px 12px;font-size:.9rem;color:#1A202C;background:#FAFAFA;outline:none;transition:border-color .2s;font-family:inherit}
+  input:focus,textarea:focus{border-color:#00356B;background:#fff}
+  textarea{resize:vertical;min-height:80px}
+
+  .gps-row{display:flex;gap:8px;margin-bottom:10px}
+  .gps-btn{background:#00356B;color:#fff;border:none;border-radius:8px;padding:11px 16px;font-size:.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .gps-status{font-size:.75rem;color:#718096;margin-bottom:8px;min-height:18px}
+  #map{height:180px;border-radius:8px;border:1.5px solid #E2E8F0;margin-top:8px}
+
+  .photo-row{display:flex;gap:8px}
+  .photo-slot{flex:1;aspect-ratio:1;border:2px dashed #CBD5E0;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;background:#FAFAFA;transition:border-color .2s}
+  .photo-slot:hover{border-color:#00356B}
+  .photo-slot img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:8px}
+  .photo-slot .plus{font-size:24px;color:#A0AEC0}
+  .photo-slot .remove-photo{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2}
+  .photo-slot.has-img .remove-photo{display:flex}
+  input[type=file]{display:none}
+
+  .field-row{margin-bottom:10px}
+
+  .submit-btn{width:100%;background:#00356B;color:#fff;border:none;border-radius:12px;padding:16px;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:4px;letter-spacing:.3px;transition:background .2s}
+  .submit-btn:active{background:#002a54}
+  .submit-btn:disabled{background:#A0AEC0;cursor:default}
+
+  /* ── waterfront info strip ── */
+  .info-strip{
+    background:
+      linear-gradient(rgba(6,86,102,.88), rgba(6,86,102,.95)),
+      url('https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80') center/cover no-repeat;
+    color:#fff;padding:16px;margin:0 -16px;display:flex;gap:16px;overflow-x:auto;
+  }
+  .info-chip{flex-shrink:0;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:10px 14px;text-align:center;min-width:100px}
+  .info-chip .ic-val{font-size:1.1rem;font-weight:800}
+  .info-chip .ic-lbl{font-size:.65rem;opacity:.8;margin-top:2px}
+
+  /* ── track view ── */
+  .track-search{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+  .search-row{display:flex;gap:8px}
+  .search-row input{flex:1;border:1.5px solid #E2E8F0;border-radius:8px;padding:11px 12px;font-size:.9rem;text-transform:uppercase;font-family:inherit;outline:none}
+  .search-row input:focus{border-color:#00356B}
+  .search-btn{background:#00356B;color:#fff;border:none;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer;font-size:.9rem}
+
+  /* ── yale strip ── */
+  .yale-strip{
+    background:
+      linear-gradient(rgba(0,53,107,.82), rgba(0,53,107,.92)),
+      url('https://images.unsplash.com/photo-1562516155-e0c1ee44059b?w=800&q=80') center/cover no-repeat;
+    border-radius:12px;padding:16px;margin-bottom:12px;color:#fff;
+  }
+  .yale-strip h3{font-size:.85rem;font-weight:700;margin-bottom:4px}
+  .yale-strip p{font-size:.75rem;opacity:.8;line-height:1.5}
+
+  /* ── toast ── */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A202C;color:#fff;padding:10px 20px;border-radius:20px;font-size:.85rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="seal">⚓</div>
+  <div class="header-text">
+    <h1>New Haven 311</h1>
+    <p>Non-Emergency City Services</p>
+  </div>
+</div>
+
+<!-- Nav tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="showView('report',this)">📋 Report</button>
+  <button class="tab" onclick="showView('track-view',this)">🔍 Track</button>
+</div>
+
+<!-- ══ REPORT VIEW ══ -->
+<div id="report" class="view active">
+
+  <!-- City hero banner -->
+  <div class="city-hero" id="hero-banner" style="margin:0 -16px 16px">
+    <div class="hero-label">City of New Haven, Connecticut</div>
+    <div class="hero-title">Report an Issue</div>
+    <div class="hero-sub">Help keep New Haven safe, clean, and connected.</div>
+  </div>
+
+  <!-- Step 1: category -->
+  <div id="step-cat">
+
+    <!-- Yale University strip -->
+    <div class="yale-strip">
+      <h3>🎓 Yale University Area</h3>
+      <p>For issues near Yale campus, use the categories below. City services cover all public streets, sidewalks, and parks in the Yale district.</p>
+    </div>
+
+    <p class="section-title">What do you need to report?</p>
+    <div class="cat-grid">
+      {% for c in categories %}
+      <div class="cat-card" onclick="selectCategory('{{c.id}}','{{c.label}}','{{c.icon}}','{{c.color}}')" data-id="{{c.id}}">
+        <div class="cat-icon" style="background:{{c.color}}22">
+          <span>{{c.icon}}</span>
+        </div>
+        <div class="cat-label">{{c.label}}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Waterfront info strip -->
+    <div class="info-strip" style="margin-top:16px;border-radius:12px;overflow:hidden">
+      <div class="info-chip">
+        <div class="ic-val">🌊</div>
+        <div class="ic-lbl">Long Wharf</div>
+      </div>
+      <div class="info-chip">
+        <div class="ic-val">🏛️</div>
+        <div class="ic-lbl">Historic Green</div>
+      </div>
+      <div class="info-chip">
+        <div class="ic-val">⚓</div>
+        <div class="ic-lbl">Harbor District</div>
+      </div>
+      <div class="info-chip">
+        <div class="ic-val">🎓</div>
+        <div class="ic-lbl">Yale Campus</div>
+      </div>
+      <div class="info-chip">
+        <div class="ic-val">🌳</div>
+        <div class="ic-lbl">East Rock Park</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Step 2: form -->
+  <div id="step-form" style="display:none">
+    <div class="selected-badge" id="selected-badge">
+      <span class="badge-icon" id="badge-icon"></span>
+      <span class="badge-label" id="badge-label"></span>
+      <button class="change-btn" onclick="backToCategories()">Change</button>
+    </div>
+
+    <form action="/submit" method="POST" enctype="multipart/form-data" id="report-form">
+      <input type="hidden" name="category" id="cat-input">
+      <input type="hidden" name="lat" id="lat-input">
+      <input type="hidden" name="lng" id="lng-input">
+
+      <div class="form-section">
+        <h3><span>📍</span> Location</h3>
+        <div class="gps-row">
+          <button type="button" class="gps-btn" onclick="getGPS()">
+            <span>📡</span> Use My Location
+          </button>
+          <input type="text" name="address" id="address-input" placeholder="Or enter address" style="flex:1">
+        </div>
+        <div class="gps-status" id="gps-status"></div>
+        <div id="map"></div>
+      </div>
+
+      <div class="form-section">
+        <h3><span>📷</span> Photos <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#A0AEC0">(optional, up to 3)</span></h3>
+        <div class="photo-row">
+          {% for i in range(3) %}
+          <div class="photo-slot" id="slot-{{i}}" onclick="triggerPhoto({{i}})">
+            <span class="plus">+</span>
+            <button type="button" class="remove-photo" onclick="removePhoto(event,{{i}})">✕</button>
+          </div>
+          <input type="file" name="photo_{{i}}" id="photo-{{i}}" accept="image/*" capture="environment" onchange="previewPhoto({{i}})">
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3><span>📝</span> Description</h3>
+        <textarea name="description" placeholder="Describe the issue in detail…" rows="3"></textarea>
+      </div>
+
+      <div class="form-section">
+        <h3><span>👤</span> Contact Info <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#A0AEC0">(optional)</span></h3>
+        <div class="field-row">
+          <label>Name</label>
+          <input type="text" name="contact_name" placeholder="Your name">
+        </div>
+        <div class="field-row">
+          <label>Email</label>
+          <input type="email" name="contact_email" placeholder="your@email.com">
+        </div>
+        <div class="field-row" style="margin-bottom:0">
+          <label>Phone</label>
+          <input type="tel" name="contact_phone" placeholder="(203) 555-0100">
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submit-btn">Submit Report</button>
+    </form>
+    <div style="height:24px"></div>
+  </div>
+</div>
+
+<!-- ══ TRACK VIEW ══ -->
+<div id="track-view" class="view">
+
+  <!-- Waterfront hero in track view -->
+  <div class="city-hero city-hero-alt" style="margin:0 -16px 16px">
+    <div class="hero-label">New Haven 311</div>
+    <div class="hero-title">Track Your Report</div>
+    <div class="hero-sub">Enter your tracking number below.</div>
+  </div>
+
+  <div class="track-search">
+    <p class="section-title" style="margin-bottom:10px">Tracking number</p>
+    <div class="search-row">
+      <input type="text" id="track-input" placeholder="NHV-2026-XXXXX" maxlength="16">
+      <button class="search-btn" onclick="trackReport()">Search</button>
+    </div>
+  </div>
+  <div id="track-result"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let map, marker;
+
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'report' && !map) initMap();
+}
+
+function selectCategory(id, label, icon, color) {
+  document.getElementById('cat-input').value = id;
+  document.getElementById('badge-icon').textContent  = icon;
+  document.getElementById('badge-label').textContent = label;
+  document.getElementById('step-cat').style.display  = 'none';
+  document.getElementById('step-form').style.display = 'block';
+  setTimeout(() => { if (!map) initMap(); else map.invalidateSize(); }, 100);
+}
+
+function backToCategories() {
+  document.getElementById('step-cat').style.display  = 'block';
+  document.getElementById('step-form').style.display = 'none';
+}
+
+function initMap() {
+  // Center on New Haven, CT
+  map = L.map('map', { zoomControl: true }).setView([41.3083, -72.9279], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO', maxZoom: 19
+  }).addTo(map);
+  map.on('click', function(e) {
+    placeMarker(e.latlng.lat, e.latlng.lng);
+    reverseGeocode(e.latlng.lat, e.latlng.lng);
+  });
+}
+
+function placeMarker(lat, lng) {
+  if (marker) map.removeLayer(marker);
+  marker = L.circleMarker([lat, lng], {
+    radius:10, color:'#00356B', fillColor:'#00356B', fillOpacity:.85, weight:2
+  }).addTo(map);
+  document.getElementById('lat-input').value = lat;
+  document.getElementById('lng-input').value = lng;
+  map.setView([lat, lng], 16);
+}
+
+function getGPS() {
+  const status = document.getElementById('gps-status');
+  status.textContent = 'Locating...';
+  if (!navigator.geolocation) { status.textContent = 'GPS not supported'; return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    placeMarker(pos.coords.latitude, pos.coords.longitude);
+    reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+    status.textContent = 'Location found ✓';
+  }, () => { status.textContent = 'Could not get location. Enter address manually.'; });
+}
+
+function reverseGeocode(lat, lng) {
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+    .then(r => r.json()).then(d => {
+      document.getElementById('address-input').value = d.display_name || '';
+    }).catch(() => {});
+}
+
+function triggerPhoto(i) { document.getElementById(`photo-${i}`).click(); }
+
+function previewPhoto(i) {
+  const file = document.getElementById(`photo-${i}`).files[0];
+  if (!file) return;
+  const slot = document.getElementById(`slot-${i}`);
+  const reader = new FileReader();
+  reader.onload = e => {
+    let img = slot.querySelector('img');
+    if (!img) { img = document.createElement('img'); slot.appendChild(img); }
+    img.src = e.target.result;
+    slot.classList.add('has-img');
+    slot.querySelector('.plus').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto(evt, i) {
+  evt.stopPropagation();
+  const slot = document.getElementById(`slot-${i}`);
+  const img  = slot.querySelector('img');
+  if (img) img.remove();
+  slot.classList.remove('has-img');
+  slot.querySelector('.plus').style.display = '';
+  document.getElementById(`photo-${i}`).value = '';
+}
+
+function trackReport() {
+  const val = document.getElementById('track-input').value.trim().toUpperCase();
+  if (val) window.location.href = `/track?tracking=${encodeURIComponent(val)}`;
+}
+document.getElementById('track-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') trackReport();
+});
+
+document.getElementById('report-form').addEventListener('submit', function(e) {
+  if (!document.getElementById('cat-input').value) {
+    e.preventDefault(); showToast('Please select a category'); return;
+  }
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('submit-btn').textContent = 'Submitting...';
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+window.addEventListener('load', () => { if (!map) initMap(); });
+</script>
+</body>
+</html>

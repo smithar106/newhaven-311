@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — New Haven 311</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C}
+  .header{background:#00356B;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+  .header-left{display:flex;align-items:center;gap:12px}
+  .seal{width:36px;height:36px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .header h1{font-size:1.1rem;font-weight:700}
+  .header p{font-size:.72rem;opacity:.8}
+  .header-right{font-size:.78rem;opacity:.7}
+
+  .container{max-width:1200px;margin:0 auto;padding:20px}
+
+  /* stats */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .stat-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+  .stat-card .stat-val{font-size:2rem;font-weight:800;line-height:1}
+  .stat-card .stat-label{font-size:.75rem;color:#718096;margin-top:4px;font-weight:600}
+  .stat-card.blue .stat-val{color:#00356B}
+  .stat-card.orange .stat-val{color:#DD6B20}
+  .stat-card.green .stat-val{color:#276749}
+  .stat-card.purple .stat-val{color:#805AD5}
+
+  /* filters */
+  .filters{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .filters label{font-size:.78rem;font-weight:600;color:#718096}
+  select,input[type=text]{border:1.5px solid #E2E8F0;border-radius:7px;padding:7px 10px;font-size:.83rem;background:#FAFAFA;color:#1A202C;outline:none;font-family:inherit}
+  select:focus,input[type=text]:focus{border-color:#00356B}
+  .filter-btn{background:#00356B;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:.83rem;font-weight:600;cursor:pointer}
+  .reset-btn{background:#fff;color:#718096;border:1.5px solid #E2E8F0;border-radius:7px;padding:8px 14px;font-size:.83rem;font-weight:600;cursor:pointer}
+  .view-toggle{margin-left:auto;display:flex;gap:6px}
+  .toggle-btn{background:#F7FAFC;border:1.5px solid #E2E8F0;border-radius:7px;padding:7px 12px;font-size:.8rem;font-weight:600;cursor:pointer;color:#718096}
+  .toggle-btn.active{background:#00356B;color:#fff;border-color:#00356B}
+
+  /* map */
+  #admin-map{height:320px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px;display:none}
+  #admin-map.visible{display:block}
+
+  /* table */
+  .table-wrap{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:.82rem}
+  thead{background:#F7FAFC}
+  th{padding:11px 14px;text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#718096;border-bottom:1px solid #E2E8F0;white-space:nowrap}
+  td{padding:11px 14px;border-bottom:1px solid #F0F2F7;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#FAFBFF}
+
+  .track-chip{font-family:monospace;font-size:.78rem;font-weight:700;color:#00356B;white-space:nowrap}
+  .cat-chip{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;font-weight:600;color:#2D3748}
+  .status-badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:.73rem;font-weight:700}
+  .s-Submitted{background:#EBF8FF;color:#2B6CB0}
+  .s-In\ Review{background:#FFFBEB;color:#D69E2E}
+  .s-Assigned{background:#FAF5FF;color:#805AD5}
+  .s-In\ Progress{background:#FFF5F5;color:#C53030}
+  .s-Resolved{background:#E6F7EF;color:#276749}
+  .s-Closed{background:#F7FAFC;color:#718096}
+
+  .addr-cell{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4A5568;font-size:.78rem}
+  .desc-cell{max-width:200px;color:#4A5568;font-size:.78rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .date-cell{white-space:nowrap;color:#718096;font-size:.75rem}
+  .actions-cell{white-space:nowrap}
+
+  /* update modal */
+  .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:16px}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+  .modal h3{font-size:1rem;font-weight:700;margin-bottom:16px;color:#00356B}
+  .modal label{display:block;font-size:.8rem;font-weight:600;color:#2D3748;margin-bottom:5px}
+  .modal select,.modal textarea{width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:10px 12px;font-size:.88rem;font-family:inherit;margin-bottom:14px}
+  .modal textarea{resize:vertical;min-height:80px}
+  .modal-btns{display:flex;gap:8px}
+  .modal-btns button{flex:1;padding:12px;border-radius:9px;font-size:.9rem;font-weight:700;cursor:pointer;border:none}
+  .modal-save{background:#00356B;color:#fff}
+  .modal-cancel{background:#F7FAFC;color:#718096;border:1.5px solid #E2E8F0}
+
+  .edit-btn{background:#EBF0FF;color:#00356B;border:none;border-radius:6px;padding:5px 10px;font-size:.75rem;font-weight:700;cursor:pointer}
+  .edit-btn:hover{background:#00356B;color:#fff}
+
+  .no-data{text-align:center;padding:40px;color:#A0AEC0}
+  .no-data .icon{font-size:36px;margin-bottom:8px}
+
+  @media(max-width:768px){
+    .stats-row{grid-template-columns:1fr 1fr}
+    .table-wrap{overflow-x:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="seal">⭐</div>
+    <div><h1>New Haven 311 — Admin</h1><p>City Services Dashboard</p></div>
+  </div>
+  <div class="header-right">{{ total }} total reports</div>
+</div>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card blue">
+      <div class="stat-val">{{ total }}</div>
+      <div class="stat-label">Total Reports</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-val">{{ open_count }}</div>
+      <div class="stat-label">Open</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-val">{{ resolved }}</div>
+      <div class="stat-label">Resolved</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-val">{{ cat_counts|length }}</div>
+      <div class="stat-label">Categories Active</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <label>Category</label>
+    <select id="f-cat" onchange="applyFilter()">
+      <option value="">All</option>
+      {% for c in categories %}
+      <option value="{{ c.label }}">{{ c.icon }} {{ c.label }}</option>
+      {% endfor %}
+    </select>
+    <label>Status</label>
+    <select id="f-status" onchange="applyFilter()">
+      <option value="">All</option>
+      {% for s in statuses %}
+      <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+    <label>Search</label>
+    <input type="text" id="f-search" placeholder="Tracking # or address…" oninput="applyFilter()">
+    <button class="reset-btn" onclick="resetFilters()">Reset</button>
+    <div class="view-toggle">
+      <button class="toggle-btn active" id="btn-table" onclick="setView('table')">📋 Table</button>
+      <button class="toggle-btn" id="btn-map" onclick="setView('map')">🗺️ Map</button>
+      <a href="/admin/export" class="toggle-btn" style="text-decoration:none">⬇️ CSV</a>
+    </div>
+  </div>
+
+  <!-- Map view -->
+  <div id="admin-map"></div>
+
+  <!-- Table view -->
+  <div class="table-wrap" id="table-view">
+    <table>
+      <thead>
+        <tr>
+          <th>Tracking</th>
+          <th>Category</th>
+          <th>Location</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Submitted</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        {% for s in submissions %}
+        <tr class="data-row"
+            data-cat="{{ s.category_label }}"
+            data-status="{{ s.status }}"
+            data-search="{{ s.tracking_number }} {{ s.address }} {{ s.description }}">
+          <td><span class="track-chip">{{ s.tracking_number }}</span></td>
+          <td>
+            <span class="cat-chip">
+              {% if s.cat_obj %}{{ s.cat_obj.icon }}{% endif %}
+              {{ s.category_label }}
+            </span>
+          </td>
+          <td><div class="addr-cell" title="{{ s.address }}">{{ s.address or '—' }}</div></td>
+          <td><div class="desc-cell">{{ s.description or '—' }}</div></td>
+          <td><span class="status-badge s-{{ s.status }}">{{ s.status }}</span></td>
+          <td><span class="date-cell">{{ s.created_at[:16] }}</span></td>
+          <td class="actions-cell">
+            <button class="edit-btn" onclick="openModal({{ s.id }},'{{ s.status }}',`{{ s.notes | replace('`','\\`') }}`)">Update</button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="no-data"><div class="icon">📭</div>No reports yet</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Update modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Update Report Status</h3>
+    <form method="POST" id="update-form">
+      <label>Status</label>
+      <select name="status" id="modal-status">
+        {% for s in statuses %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+      <label>Notes for resident</label>
+      <textarea name="notes" id="modal-notes" placeholder="Optional update visible to the resident…"></textarea>
+      <div class="modal-btns">
+        <button type="button" class="modal-cancel" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="modal-save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── data from Flask ───────────────────────────────────────────────────────────
+const allSubs = {{ submissions | tojson }};
+const catColors = {
+  {% for c in categories %}"{{ c.id }}":"{{ c.color }}",{% endfor %}
+};
+
+// ── modal ────────────────────────────────────────────────────────────────────
+function openModal(id, status, notes) {
+  document.getElementById('update-form').action = `/admin/update/${id}`;
+  document.getElementById('modal-status').value = status;
+  document.getElementById('modal-notes').value  = notes || '';
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+
+// ── filter ───────────────────────────────────────────────────────────────────
+function applyFilter() {
+  const cat    = document.getElementById('f-cat').value.toLowerCase();
+  const status = document.getElementById('f-status').value.toLowerCase();
+  const search = document.getElementById('f-search').value.toLowerCase();
+  document.querySelectorAll('.data-row').forEach(row => {
+    const matchCat    = !cat    || row.dataset.cat.toLowerCase().includes(cat);
+    const matchStatus = !status || row.dataset.status.toLowerCase() === status;
+    const matchSearch = !search || row.dataset.search.toLowerCase().includes(search);
+    row.style.display = (matchCat && matchStatus && matchSearch) ? '' : 'none';
+  });
+}
+function resetFilters() {
+  ['f-cat','f-status'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-search').value = '';
+  applyFilter();
+}
+
+// ── map view ─────────────────────────────────────────────────────────────────
+let adminMap, mapInited = false;
+
+function setView(v) {
+  document.getElementById('table-view').style.display = v === 'table' ? '' : 'none';
+  document.getElementById('admin-map').classList.toggle('visible', v === 'map');
+  document.getElementById('btn-table').classList.toggle('active', v === 'table');
+  document.getElementById('btn-map').classList.toggle('active', v === 'map');
+  if (v === 'map' && !mapInited) initAdminMap();
+}
+
+function initAdminMap() {
+  mapInited = true;
+  adminMap = L.map('admin-map').setView([32.7767, -96.7970], 11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+    attribution:'© OpenStreetMap © CARTO', maxZoom:19
+  }).addTo(adminMap);
+
+  allSubs.forEach(s => {
+    if (!s.lat || !s.lng) return;
+    const color = catColors[s.category] || '#718096';
+    const marker = L.circleMarker([s.lat, s.lng], {
+      radius:8, color:'#fff', weight:2, fillColor:color, fillOpacity:.85
+    }).addTo(adminMap);
+    marker.bindPopup(`
+      <strong>${s.tracking_number}</strong><br>
+      ${s.category_label}<br>
+      <em>${s.status}</em><br>
+      ${(s.address||'').substring(0,50)}
+    `);
+  });
+}
+</script>
+</body>
+</html>

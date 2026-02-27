@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Track Report — New Haven 311</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C;min-height:100vh}
+  .header{background:#00356B;color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px}
+  .seal{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .header-text h1{font-size:1.25rem;font-weight:700}
+  .header-text p{font-size:.72rem;opacity:.8;margin-top:1px}
+  .container{max-width:520px;margin:0 auto;padding:20px 16px}
+
+  .search-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+  .search-card h2{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:12px}
+  .search-row{display:flex;gap:8px}
+  .search-row input{flex:1;border:1.5px solid #E2E8F0;border-radius:8px;padding:11px 12px;font-size:.9rem;font-family:inherit;text-transform:uppercase;outline:none}
+  .search-row input:focus{border-color:#00356B}
+  .search-btn{background:#00356B;color:#fff;border:none;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer;font-size:.9rem}
+
+  .not-found{background:#fff;border-radius:12px;padding:28px 20px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+  .not-found .icon{font-size:40px;margin-bottom:12px}
+  .not-found h3{font-size:1rem;font-weight:700;color:#1A202C;margin-bottom:6px}
+  .not-found p{font-size:.83rem;color:#718096}
+
+  .status-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:.78rem;font-weight:700}
+  .status-Submitted{background:#EBF8FF;color:#2B6CB0}
+  .status-In-Review{background:#FFFBEB;color:#D69E2E}
+  .status-Assigned{background:#FAF5FF;color:#805AD5}
+  .status-In-Progress{background:#FFF5F5;color:#C53030}
+  .status-Resolved{background:#E6F7EF;color:#276749}
+  .status-Closed{background:#F7FAFC;color:#718096}
+
+  .info-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:12px}
+  .info-card h3{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+  .detail-row{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+  .detail-row:last-child{margin-bottom:0}
+  .detail-icon{font-size:16px;width:22px;flex-shrink:0;margin-top:1px}
+  .detail-label{font-size:.75rem;color:#718096;min-width:60px}
+  .detail-value{font-size:.85rem;font-weight:600;color:#1A202C;flex:1;word-break:break-word}
+
+  .timeline{margin:0}
+  .tl-step{display:flex;gap:12px;position:relative;padding-bottom:16px}
+  .tl-step:last-child{padding-bottom:0}
+  .tl-left{display:flex;flex-direction:column;align-items:center}
+  .tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;z-index:1}
+  .tl-dot.done{background:#00356B;color:#fff}
+  .tl-dot.current{background:#286DC0;color:#fff;box-shadow:0 0 0 4px #E6F7EF}
+  .tl-dot.pending{background:#E2E8F0;color:#A0AEC0}
+  .tl-line{flex:1;width:2px;background:#E2E8F0;margin:2px 0}
+  .tl-step:last-child .tl-line{display:none}
+  .tl-content{padding-top:4px}
+  .tl-title{font-size:.85rem;font-weight:600}
+  .tl-title.done{color:#00356B}
+  .tl-title.current{color:#286DC0}
+  .tl-title.pending{color:#A0AEC0}
+  .tl-desc{font-size:.75rem;color:#718096;margin-top:2px}
+
+  .photos-grid{display:flex;gap:8px;flex-wrap:wrap}
+  .photos-grid img{width:calc(33.33% - 6px);border-radius:8px;aspect-ratio:1;object-fit:cover}
+
+  .notes-box{background:#FFFBEB;border-left:3px solid #D69E2E;border-radius:0 8px 8px 0;padding:10px 12px;font-size:.83rem;color:#744210;margin-top:8px;line-height:1.5}
+
+  .btn{display:block;width:100%;border-radius:12px;padding:14px;font-size:.95rem;font-weight:700;text-align:center;text-decoration:none;border:none;cursor:pointer;margin-bottom:10px}
+  .btn-primary{background:#00356B;color:#fff}
+  .btn-outline{background:#fff;color:#00356B;border:2px solid #00356B}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="seal">⭐</div>
+  <div class="header-text">
+    <h1>New Haven 311</h1>
+    <p>Track Your Report</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="search-card">
+    <h2>Enter Tracking Number</h2>
+    <div class="search-row">
+      <input type="text" id="track-input" placeholder="NHV-2026-XXXXX"
+             value="{{ tracking }}" maxlength="16">
+      <button class="search-btn" onclick="doTrack()">Search</button>
+    </div>
+  </div>
+
+  {% if tracking and not sub %}
+  <div class="not-found">
+    <div class="icon">🔍</div>
+    <h3>No report found</h3>
+    <p>We couldn't find a report with tracking number <strong>{{ tracking }}</strong>. Check the number and try again.</p>
+  </div>
+  {% endif %}
+
+  {% if sub %}
+  <!-- Status card -->
+  <div class="info-card">
+    <h3>
+      <span>Report Status</span>
+      <span class="status-badge status-{{ sub.status | replace(' ', '-') }}">
+        {% if sub.status == 'Resolved' %}✓ {% endif %}{{ sub.status }}
+      </span>
+    </h3>
+
+    <div class="timeline">
+      {% set steps = [
+        ('Submitted',   '✓', 'Report received by New Haven 311'),
+        ('In Review',   '2', 'Staff reviewing your report'),
+        ('Assigned',    '3', 'Routed to city department'),
+        ('In Progress', '4', 'Crew working on the issue'),
+        ('Resolved',    '✓', 'Issue has been addressed'),
+      ] %}
+      {% for step_name, step_num, step_desc in steps %}
+        {% if loop.index0 < status_index %}
+          {% set dot_class = 'done' %}
+          {% set title_class = 'done' %}
+        {% elif loop.index0 == status_index %}
+          {% set dot_class = 'current' %}
+          {% set title_class = 'current' %}
+        {% else %}
+          {% set dot_class = 'pending' %}
+          {% set title_class = 'pending' %}
+        {% endif %}
+        <div class="tl-step">
+          <div class="tl-left">
+            <div class="tl-dot {{ dot_class }}">{{ step_num if dot_class != 'done' else '✓' }}</div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-content">
+            <div class="tl-title {{ title_class }}">{{ step_name }}</div>
+            <div class="tl-desc">{{ step_desc }}</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if sub.notes %}
+    <div class="notes-box">
+      <strong>Update from the city:</strong> {{ sub.notes }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Details -->
+  <div class="info-card">
+    <h3>Report Details</h3>
+    <div class="detail-row">
+      <span class="detail-icon">🔖</span>
+      <span class="detail-label">Tracking</span>
+      <span class="detail-value" style="font-family:monospace;font-weight:700;color:#00356B">{{ sub.tracking_number }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-icon">📋</span>
+      <span class="detail-label">Category</span>
+      <span class="detail-value">{% if cat %}{{ cat.icon }} {% endif %}{{ sub.category_label }}</span>
+    </div>
+    {% if sub.address %}
+    <div class="detail-row">
+      <span class="detail-icon">📍</span>
+      <span class="detail-label">Location</span>
+      <span class="detail-value">{{ sub.address[:80] }}{% if sub.address|length > 80 %}…{% endif %}</span>
+    </div>
+    {% endif %}
+    {% if sub.description %}
+    <div class="detail-row">
+      <span class="detail-icon">📝</span>
+      <span class="detail-label">Details</span>
+      <span class="detail-value">{{ sub.description }}</span>
+    </div>
+    {% endif %}
+    <div class="detail-row" style="margin-bottom:0">
+      <span class="detail-icon">🕐</span>
+      <span class="detail-label">Submitted</span>
+      <span class="detail-value">{{ sub.created_at[:16] }}</span>
+    </div>
+  </div>
+
+  {% if sub.photos %}
+  <div class="info-card">
+    <h3>Photos</h3>
+    <div class="photos-grid">
+      {% for p in sub.photos %}
+      <img src="{{ p }}" alt="Report photo" onclick="window.open('{{ p }}','_blank')">
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
+  <a href="/" class="btn btn-primary">Report Another Issue</a>
+
+</div>
+
+<script>
+const inp = document.getElementById('track-input');
+function doTrack() {
+  const v = inp.value.trim().toUpperCase();
+  if (v) window.location.href = `/track?tracking=${encodeURIComponent(v)}`;
+}
+inp.addEventListener('keydown', e => { if (e.key === 'Enter') doTrack(); });
+</script>
+</body>
+</html>
