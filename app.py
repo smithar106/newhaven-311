@@ -186,7 +186,7 @@ def send_staff_notification(to_email, to_name, tracking, category_label,
       </div>
     </div>
     <div style="background:#F7FAFC;padding:12px 24px;text-align:center;font-size:.72rem;color:#A0AEC0">
-      {city} 311 — Category Routing · Powered by CivicOS
+      {city} 311 — Category Routing · Powered by MyCity311
     </div>
   </div>
 </body></html>"""
@@ -248,7 +248,7 @@ def send_confirmation_email(to_email, tracking, category_label, address, city):
       </p>
     </div>
     <div style="background:#F7FAFC;padding:14px 24px;text-align:center;font-size:.72rem;color:#A0AEC0">
-      {city} 311 — Non-Emergency City Services · Powered by CivicOS
+      {city} 311 — Non-Emergency City Services · Powered by MyCity311
     </div>
   </div>
 </body>
