@@ -141,7 +141,7 @@ def require_admin(f):
 
 def generate_tracking():
     year   = datetime.now().year
-    suffix = str(uuid.uuid4().int)[:5].zfill(5)
+    suffix = uuid.uuid4().hex[:8].upper()
     return f"{CITY_SHORT}-{year}-{suffix}"
 
 ALLOWED = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
