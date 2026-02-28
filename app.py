@@ -70,7 +70,12 @@ CATEGORIES = [
     {'id': 'other',             'label': 'Other',                   'icon': '📋',  'color': '#4A5568'},
 ]
 
-STATUSES = ['Submitted', 'In Review', 'Assigned', 'In Progress', 'Resolved', 'Closed']
+STATUSES   = ['Submitted', 'In Review', 'Assigned', 'In Progress', 'Resolved', 'Closed']
+PRIORITIES = [
+    {'id': 'Low',    'color': '#718096', 'bg': '#F7FAFC', 'label': 'Low'},
+    {'id': 'Medium', 'color': '#D69E2E', 'bg': '#FFFBEB', 'label': 'Medium'},
+    {'id': 'High',   'color': '#C53030', 'bg': '#FFF5F5', 'label': 'High'},
+]
 
 
 # ── database ──────────────────────────────────────────────────────────────────
@@ -120,6 +125,12 @@ def init_db():
             updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Add priority column to existing tables (safe migration)
+    try:
+        db.execute("ALTER TABLE submissions ADD COLUMN priority TEXT DEFAULT 'Medium'")
+        db.commit()
+    except Exception:
+        pass  # column already exists
     db.commit()
     db.close()
 
@@ -448,6 +459,7 @@ def admin():
         status_chart_colors = json.dumps(status_chart_colors),
         categories          = CATEGORIES,
         statuses            = STATUSES,
+        priorities          = PRIORITIES,
         city                = CITY_NAME,
     )
 
@@ -458,9 +470,10 @@ def admin_update(sub_id):
     db = get_db()
     db.execute("""
         UPDATE submissions
-        SET status=?, notes=?, updated_at=CURRENT_TIMESTAMP
+        SET status=?, notes=?, priority=?, updated_at=CURRENT_TIMESTAMP
         WHERE id=?
-    """, (request.form.get('status'), request.form.get('notes',''), sub_id))
+    """, (request.form.get('status'), request.form.get('notes',''),
+          request.form.get('priority', 'Medium'), sub_id))
     db.commit()
     return redirect(url_for('admin_ticket', sub_id=sub_id))
 
@@ -476,8 +489,10 @@ def admin_ticket(sub_id):
     sub['photos']  = json.loads(sub.get('photos', '[]'))
     sub['cat_obj'] = next((c for c in CATEGORIES if c['id'] == sub['category']), None)
     status_index   = STATUSES.index(sub['status']) if sub['status'] in STATUSES else 0
+    sub['priority'] = sub.get('priority') or 'Medium'
     return render_template('admin_ticket.html',
-        sub=sub, statuses=STATUSES, status_index=status_index, city=CITY_NAME)
+        sub=sub, statuses=STATUSES, status_index=status_index,
+        priorities=PRIORITIES, city=CITY_NAME)
 
 
 @app.route('/admin/seed-demo', methods=['POST'])

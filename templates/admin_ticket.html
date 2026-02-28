@@ -36,6 +36,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .s-In-Progress{background:#FFF5F5;color:#C53030}
 .s-Resolved{background:#E6F7EF;color:#276749}
 .s-Closed{background:#F7FAFC;color:#718096}
+
+/* ── priority badges ── */
+.p-Low{background:#F7FAFC;color:#718096;border:1px solid #E2E8F0}
+.p-Medium{background:#FFFBEB;color:#B7791F;border:1px solid #FAF089}
+.p-High{background:#FFF5F5;color:#C53030;border:1px solid #FEB2B2}
 .hero-right{margin-left:auto;font-size:.78rem;color:#A0AEC0;text-align:right}
 
 /* ── two-col grid ── */
@@ -121,6 +126,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <span class="status-badge s-{{ sub.status | replace(' ', '-') }}">
       {% if sub.status == 'Resolved' %}✓ {% endif %}{{ sub.status }}
+    </span>
+    <span class="status-badge p-{{ sub.priority }}">
+      {% if sub.priority == 'High' %}🔴{% elif sub.priority == 'Medium' %}🟡{% else %}⚪{% endif %}
+      {{ sub.priority }} Priority
     </span>
     <div class="hero-right">
       <div>Submitted {{ sub.created_at[:16] }}</div>
@@ -216,6 +225,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <select name="status">
             {% for s in statuses %}
             <option value="{{ s }}" {% if s == sub.status %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+          <label>Priority</label>
+          <select name="priority">
+            {% for p in priorities %}
+            <option value="{{ p.id }}" {% if p.id == sub.priority %}selected{% endif %}>
+              {% if p.id == 'High' %}🔴{% elif p.id == 'Medium' %}🟡{% else %}⚪{% endif %}
+              {{ p.label }}
+            </option>
             {% endfor %}
           </select>
           <label>Notes for resident (optional)</label>

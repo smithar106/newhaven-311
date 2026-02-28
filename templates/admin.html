@@ -86,6 +86,11 @@ tr:last-child td{border-bottom:none}
 .no-data{text-align:center;padding:48px;color:#A0AEC0}
 .no-data .icon{font-size:40px;margin-bottom:10px}
 
+/* ── priority badges ── */
+.p-Low{background:#F7FAFC;color:#718096;border:1px solid #E2E8F0}
+.p-Medium{background:#FFFBEB;color:#B7791F;border:1px solid #FAF089}
+.p-High{background:#FFF5F5;color:#C53030;border:1px solid #FEB2B2}
+
 /* ── view arrow ── */
 .view-arrow{color:#A0AEC0;font-size:.82rem;white-space:nowrap}
 
@@ -186,6 +191,13 @@ tr:last-child td{border-bottom:none}
       <option value="{{ s }}">{{ s }}</option>
       {% endfor %}
     </select>
+    <label>Priority</label>
+    <select id="f-priority" onchange="applyFilter()">
+      <option value="">All</option>
+      {% for p in priorities %}
+      <option value="{{ p.id }}">{{ p.id }}</option>
+      {% endfor %}
+    </select>
     <label>Search</label>
     <input type="text" id="f-search" placeholder="Tracking # or address…" oninput="applyFilter()">
     <button class="reset-btn" onclick="resetFilters()">Reset</button>
@@ -205,6 +217,7 @@ tr:last-child td{border-bottom:none}
         <tr>
           <th>Tracking</th>
           <th>Category</th>
+          <th>Priority</th>
           <th>Location</th>
           <th>Description</th>
           <th>Status</th>
@@ -217,6 +230,7 @@ tr:last-child td{border-bottom:none}
         <tr class="data-row"
             data-cat="{{ s.category_label }}"
             data-status="{{ s.status }}"
+            data-priority="{{ s.priority or 'Medium' }}"
             data-search="{{ s.tracking_number }} {{ s.address }} {{ s.description }}"
             onclick="window.location='/admin/ticket/{{ s.id }}'">
           <td><span class="track-chip">{{ s.tracking_number }}</span></td>
@@ -224,6 +238,13 @@ tr:last-child td{border-bottom:none}
             <span class="cat-chip">
               {% if s.cat_obj %}{{ s.cat_obj.icon }}{% endif %}
               {{ s.category_label }}
+            </span>
+          </td>
+          <td>
+            {% set pri = s.priority or 'Medium' %}
+            <span class="status-badge p-{{ pri }}">
+              {% if pri == 'High' %}🔴{% elif pri == 'Medium' %}🟡{% else %}⚪{% endif %}
+              {{ pri }}
             </span>
           </td>
           <td><div class="addr-cell" title="{{ s.address }}">{{ s.address or '—' }}</div></td>
@@ -330,15 +351,17 @@ let currentPage = 1;
 let visibleRows = [];
 
 function applyFilter() {
-  const cat    = document.getElementById('f-cat').value.toLowerCase();
-  const status = document.getElementById('f-status').value.toLowerCase();
-  const search = document.getElementById('f-search').value.toLowerCase();
-  const allRows = Array.from(document.querySelectorAll('.data-row'));
+  const cat      = document.getElementById('f-cat').value.toLowerCase();
+  const status   = document.getElementById('f-status').value.toLowerCase();
+  const priority = document.getElementById('f-priority').value.toLowerCase();
+  const search   = document.getElementById('f-search').value.toLowerCase();
+  const allRows  = Array.from(document.querySelectorAll('.data-row'));
   visibleRows = allRows.filter(row => {
-    const matchCat    = !cat    || row.dataset.cat.toLowerCase().includes(cat);
-    const matchStatus = !status || row.dataset.status.toLowerCase() === status;
-    const matchSearch = !search || row.dataset.search.toLowerCase().includes(search);
-    return matchCat && matchStatus && matchSearch;
+    const matchCat      = !cat      || row.dataset.cat.toLowerCase().includes(cat);
+    const matchStatus   = !status   || row.dataset.status.toLowerCase() === status;
+    const matchPriority = !priority || row.dataset.priority.toLowerCase() === priority;
+    const matchSearch   = !search   || row.dataset.search.toLowerCase().includes(search);
+    return matchCat && matchStatus && matchPriority && matchSearch;
   });
   // hide all, then show current page
   allRows.forEach(r => r.style.display = 'none');
@@ -365,7 +388,7 @@ function changePage(dir) {
 }
 
 function resetFilters() {
-  ['f-cat','f-status'].forEach(id => document.getElementById(id).value = '');
+  ['f-cat','f-status','f-priority'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-search').value = '';
   applyFilter();
 }
