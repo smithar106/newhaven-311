@@ -487,6 +487,10 @@ def admin_seed_demo():
     db  = get_db()
     now = datetime.utcnow()
 
+    # Clear existing records so re-running always gives a clean 1,000
+    db.execute('DELETE FROM submissions')
+    db.commit()
+
     # ── address pool (real New Haven streets) ─────────────────────────────────
     STREETS = [
         ('Whalley Ave',       41.3101, -72.9387),
