@@ -332,57 +332,277 @@ def admin_seed_demo():
     import random
     db  = get_db()
     now = datetime.utcnow()
-    DEMO = [
-        ('pothole','Large pothole cracking vehicle rims near the intersection','148 Whalley Ave, New Haven, CT',41.3101,-72.9387,28,'Resolved'),
-        ('streetlight','Street lamp dark for two weeks, safety concern at night','55 Crown St, New Haven, CT',41.3065,-72.9258,26,'Resolved'),
-        ('graffiti','Spray-painted tags on retaining wall, highly visible','22 Chapel St, New Haven, CT',41.3080,-72.9267,25,'Resolved'),
-        ('abandoned_vehicle','Silver sedan, no plates, sitting 10+ days','310 Grand Ave, New Haven, CT',41.2994,-72.9099,24,'Closed'),
-        ('illegal_dumping','Mattress and debris dumped on sidewalk overnight','88 Dixwell Ave, New Haven, CT',41.3178,-72.9368,23,'In Progress'),
-        ('missed_pickup','Recycling bins not collected on scheduled Tuesday','72 Edgewood Ave, New Haven, CT',41.3062,-72.9429,22,'Resolved'),
-        ('park_damage','Large branch blocking main path in Edgewood Park','Edgewood Park, New Haven, CT',41.3039,-72.9474,21,'Resolved'),
-        ('noise','Loud music from bar audible 4 blocks away after 2AM','200 Orange St, New Haven, CT',41.3100,-72.9230,20,'In Review'),
-        ('pothole','Several potholes along full block damaging tires','400 Elm St, New Haven, CT',41.3095,-72.9307,19,'In Progress'),
-        ('code_violation','Commercial dumpster overflowing, attracting pests','510 Howard Ave, New Haven, CT',41.2953,-72.9262,18,'Assigned'),
-        ('water_sewer','Water main crack causing bubbling pavement and leak','33 York St, New Haven, CT',41.3082,-72.9296,17,'Resolved'),
-        ('harbor_waterfront','Dock planks rotted through at Long Wharf, safety hazard','Long Wharf Dr, New Haven, CT',41.2912,-72.9166,16,'Assigned'),
-        ('streetlight','Traffic light out at busy four-way intersection','Whalley Ave & Ella Grasso Blvd, NH, CT',41.3049,-72.9436,15,'In Progress'),
-        ('graffiti','Tags on historic building facade, appears fresh','100 Audubon St, New Haven, CT',41.3118,-72.9240,14,'Submitted'),
-        ('abandoned_vehicle','RV parked on residential street 3 weeks','45 Fountain St, New Haven, CT',41.3144,-72.9344,13,'In Review'),
-        ('pothole','Deep pothole forming sinkhole, car bottomed out','201 Winthrop Ave, New Haven, CT',41.3011,-72.9196,12,'Assigned'),
-        ('missed_pickup','Entire street skipped on garbage day','66 Blake St, New Haven, CT',41.3063,-72.9332,12,'Resolved'),
-        ('park_damage','Vandalism to picnic tables in Wooster Square Park','Wooster Square Park, New Haven, CT',41.3028,-72.9155,11,'In Review'),
-        ('illegal_dumping','Household trash dumped near school storm drain','390 Quinnipiac Ave, New Haven, CT',41.3062,-72.8974,10,'Submitted'),
-        ('noise','Generator running 24/7 at construction site','900 Chapel St, New Haven, CT',41.3070,-72.9192,10,'Assigned'),
-        ('water_sewer','Sewage odor from manhole during heavy rain','120 Ferry St, New Haven, CT',41.3008,-72.9108,9,'In Progress'),
-        ('code_violation','Exterior stairs collapsed, building appears occupied','175 Shelton Ave, New Haven, CT',41.3160,-72.9460,8,'Assigned'),
-        ('pothole','Pothole causing bikes to crash near Yale campus','Prospect St & Sachem St, New Haven, CT',41.3188,-72.9264,7,'Submitted'),
-        ('streetlight','Flickering lamp buzzing all night near apartments','44 Trumbull St, New Haven, CT',41.3097,-72.9252,7,'In Review'),
-        ('harbor_waterfront','Dead fish washing ashore at Lighthouse Point','Lighthouse Point Park, New Haven, CT',41.2566,-72.8983,6,'Submitted'),
-        ('graffiti','Tags on playground equipment, needs urgent removal','East Rock Park, New Haven, CT',41.3288,-72.9168,6,'Submitted'),
-        ('missed_pickup','Christmas tree left curbside not picked up','27 Maple St, New Haven, CT',41.3130,-72.9290,5,'In Review'),
-        ('abandoned_vehicle','Burned-out vehicle blocking one lane of traffic','180 Quinnipiac Ave, New Haven, CT',41.3060,-72.8990,5,'Submitted'),
-        ('park_damage','Tennis court net torn down, frame bent beyond use','Beaver Ponds Park, New Haven, CT',41.3230,-72.9380,4,'Submitted'),
-        ('pothole','New pothole opened after street flooding last week','55 Lloyd St, New Haven, CT',41.2987,-72.9230,4,'Submitted'),
-        ('water_sewer','Fire hydrant leaking steadily into street for days','300 Whalley Ave, New Haven, CT',41.3060,-72.9360,3,'In Review'),
-        ('noise','Bar music audible inside homes 4 blocks away nightly','138 Crown St, New Haven, CT',41.3059,-72.9244,3,'Submitted'),
-        ('illegal_dumping','Electronics and appliances dumped in alley overnight','211 River St, New Haven, CT',41.2940,-72.9210,2,'Submitted'),
-        ('code_violation','Abandoned storefront with broken windows open to public','88 Grand Ave, New Haven, CT',41.3000,-72.9110,1,'Submitted'),
-        ('streetlight','Solar walkway lights all dark along entire park path','West River Memorial Park, NH, CT',41.3078,-72.9520,1,'Submitted'),
+
+    # ── address pool (real New Haven streets) ─────────────────────────────────
+    STREETS = [
+        ('Whalley Ave',       41.3101, -72.9387),
+        ('Crown St',          41.3065, -72.9258),
+        ('Chapel St',         41.3080, -72.9267),
+        ('Grand Ave',         41.2994, -72.9099),
+        ('Dixwell Ave',       41.3178, -72.9368),
+        ('Edgewood Ave',      41.3062, -72.9429),
+        ('Elm St',            41.3095, -72.9307),
+        ('Howard Ave',        41.2953, -72.9262),
+        ('York St',           41.3082, -72.9296),
+        ('Long Wharf Dr',     41.2912, -72.9166),
+        ('Ella Grasso Blvd',  41.3049, -72.9436),
+        ('Audubon St',        41.3118, -72.9240),
+        ('Fountain St',       41.3144, -72.9344),
+        ('Winthrop Ave',      41.3011, -72.9196),
+        ('Blake St',          41.3063, -72.9332),
+        ('Quinnipiac Ave',    41.3062, -72.8974),
+        ('Orange St',         41.3100, -72.9230),
+        ('Ferry St',          41.3008, -72.9108),
+        ('Shelton Ave',       41.3160, -72.9460),
+        ('Prospect St',       41.3188, -72.9264),
+        ('Trumbull St',       41.3097, -72.9252),
+        ('Maple St',          41.3130, -72.9290),
+        ('Lloyd St',          41.2987, -72.9230),
+        ('River St',          41.2940, -72.9210),
+        ('Bradley St',        41.3155, -72.9320),
+        ('Goffe St',          41.3175, -72.9420),
+        ('Orchard St',        41.3090, -72.9450),
+        ('Sherman Ave',       41.3200, -72.9350),
+        ('Blatchley Ave',     41.3040, -72.9050),
+        ('Forbes Ave',        41.2970, -72.9280),
+        ('Davenport Ave',     41.2890, -72.9240),
+        ('Congress Ave',      41.3020, -72.9320),
+        ('George St',         41.3050, -72.9300),
+        ('State St',          41.3075, -72.9200),
+        ('Legion Ave',        41.2920, -72.9290),
+        ('Derby Ave',         41.3000, -72.9480),
+        ('Winchester Ave',    41.3250, -72.9310),
+        ('Newhall St',        41.3180, -72.9290),
+        ('Bassett St',        41.3070, -72.9380),
+        ('Valley St',         41.3130, -72.9480),
     ]
-    for cat_id, desc, addr, lat, lng, days_ago, status in DEMO:
+
+    # ── description templates per category ────────────────────────────────────
+    DESCRIPTIONS = {
+        'pothole': [
+            'Large pothole cracking vehicle rims at this intersection',
+            'Deep pothole that caused a flat tire, needs urgent repair',
+            'Multiple potholes along the block, worsening after rain',
+            'Pothole near school zone, dangerous for children crossing',
+            'Sinkhole forming from pothole, car bottomed out completely',
+            'Road surface completely broken up, appears to be worsening',
+            'Pothole cluster near bus stop, damaging commuter vehicles',
+            'New pothole opened after last week\'s heavy rainfall',
+        ],
+        'streetlight': [
+            'Street lamp dark for two weeks, safety concern at night',
+            'Flickering lamp buzzing loudly, keeps neighbors awake',
+            'Traffic light out at busy four-way intersection',
+            'Solar walkway lights all dark along entire park path',
+            'Streetlight knocked over, wires exposed on sidewalk',
+            'Entire block dark after storm, multiple lights out',
+            'Light sensor broken, stays on all day wasting energy',
+        ],
+        'graffiti': [
+            'Spray-painted tags on retaining wall, highly visible from road',
+            'Tags on historic building facade, appeared overnight',
+            'Graffiti on playground equipment, inappropriate content',
+            'Large mural-style vandalism on commercial building',
+            'Tags spreading across multiple storefronts on block',
+            'Graffiti on public utility box, intersection of two major streets',
+            'School building tagged over the weekend',
+        ],
+        'abandoned_vehicle': [
+            'Silver sedan with no plates, sitting in same spot 10+ days',
+            'RV parked on residential street for over three weeks',
+            'Burned-out vehicle partially blocking lane of traffic',
+            'Flat-tired pickup truck hasn\'t moved in two weeks',
+            'Stolen vehicle recovered here, needs tow',
+            'Car on blocks with no engine, landlord says not theirs',
+            'Commercial van expired registration, blocking hydrant',
+        ],
+        'illegal_dumping': [
+            'Mattress and household debris dumped on sidewalk overnight',
+            'Electronics and appliances dumped in back alley',
+            'Construction waste piled near storm drain',
+            'Household trash bags dumped near school entrance',
+            'Tires stacked against fence in empty lot',
+            'Furniture left in middle of public right-of-way',
+            'Bags of yard waste blocking sidewalk accessibility',
+        ],
+        'missed_pickup': [
+            'Recycling bins skipped on scheduled Tuesday collection',
+            'Entire street missed on garbage day, bins still full',
+            'Bulk item left curbside three pickup days in a row',
+            'Holiday tree not collected weeks after the holiday',
+            'Yard waste bags untouched for two collection cycles',
+            'Commercial bins overflowing after missed pickup',
+        ],
+        'park_damage': [
+            'Large branch blocking main pedestrian path after storm',
+            'Vandalism to picnic tables, bolts removed',
+            'Tennis court net torn down, frame bent beyond repair',
+            'Playground swing chain broken, safety hazard for children',
+            'Basketball hoop net missing, backboard cracked',
+            'Footbridge railing loose, dangerous for pedestrians',
+            'Park benches overturned and damaged overnight',
+        ],
+        'noise': [
+            'Loud music from nearby bar audible 4 blocks away after 2AM',
+            'Generator running 24/7 at adjacent construction site',
+            'Bar music and crowd noise disturbing residents nightly',
+            'Construction work starting before 7AM on weekends',
+            'Industrial HVAC unit vibrating walls of neighboring homes',
+            'Late-night outdoor events exceeding noise ordinance',
+        ],
+        'code_violation': [
+            'Commercial dumpster overflowing, attracting pests and rodents',
+            'Exterior stairs collapsed on occupied building',
+            'Abandoned storefront with broken windows open to public',
+            'Vacant lot overgrown, creating safety and pest concern',
+            'Property fence encroaching on public right-of-way',
+            'Unpermitted deck addition visible from street',
+            'Business signage blocking sightlines at intersection',
+        ],
+        'water_sewer': [
+            'Water main crack causing bubbling pavement and active leak',
+            'Sewage odor from manhole strong during and after rain',
+            'Fire hydrant leaking steadily into street for three days',
+            'Storm drain completely clogged, flooding intersection',
+            'Basement flooding from backed-up sewer line',
+            'Water pressure loss affecting entire block',
+            'Manhole cover missing, open hole in roadway',
+        ],
+        'harbor_waterfront': [
+            'Dock planks rotted through at Long Wharf, safety hazard',
+            'Dead fish washing ashore, possible pollution event',
+            'Waterfront railing collapsed near public walkway',
+            'Debris accumulation blocking boat launch access',
+            'Oil sheen visible on water near marina',
+            'Seawall erosion exposing unstable embankment',
+        ],
+        'other': [
+            'Sidewalk heaved by tree root, tripping hazard',
+            'Bus shelter glass shattered, sharp edges exposed',
+            'Crosswalk markings completely faded at busy intersection',
+            'Street sign knocked down, missing at intersection',
+            'Dead tree leaning toward power lines, imminent fall risk',
+            'Overhanging tree branch blocking streetlight',
+        ],
+    }
+
+    # ── contact name pool ─────────────────────────────────────────────────────
+    NAMES = [
+        'Maria Santos','James Whitfield','Priya Nair','Carlos Rivera',
+        'Susan Chen','David Okafor','Jennifer Rossi','Michael Torres',
+        'Linda Park','Robert Nguyen','Angela Brown','Kevin Murphy',
+        'Diane Kowalski','Thomas Adeyemi','Rachel Goldstein','Marcus Webb',
+        'Fatima Hussain','Patrick O\'Brien','Yuki Tanaka','Alexa Petrov',
+        'Denise Washington','Omar Khalil','Cynthia Reyes','Brandon Hall',
+        'Miriam Cohen','Jamal Freeman','Nicole Deschamps','Ethan Larson',
+        'Aisha Johnson','Paul Ciccone','Teresa Huang','Andre Williams',
+        'Kristin Bjork','Samuel Osei','Rosa Delgado','Nathan Prescott',
+        'Valeria Moretti','Derek Sims','Leah Abramowitz','Victor Pham',
+    ]
+
+    # ── status distribution (realistic for a 311 system) ─────────────────────
+    # ~35% resolved/closed (older tickets), ~20% in progress, ~45% open
+    STATUS_WEIGHTS = [
+        ('Submitted',   20),
+        ('In Review',   15),
+        ('Assigned',    12),
+        ('In Progress', 18),
+        ('Resolved',    25),
+        ('Closed',      10),
+    ]
+    STATUS_POOL = [s for s, w in STATUS_WEIGHTS for _ in range(w)]
+
+    # ── category weights (potholes most common) ───────────────────────────────
+    CAT_WEIGHTS = [
+        ('pothole',           18),
+        ('streetlight',       12),
+        ('graffiti',          10),
+        ('missed_pickup',      9),
+        ('illegal_dumping',    9),
+        ('noise',              8),
+        ('code_violation',     8),
+        ('water_sewer',        8),
+        ('abandoned_vehicle',  7),
+        ('park_damage',        6),
+        ('harbor_waterfront',  3),
+        ('other',              2),
+    ]
+    CAT_POOL = [c for c, w in CAT_WEIGHTS for _ in range(w)]
+
+    random.seed(42)  # reproducible demo data
+    rows_inserted = 0
+
+    for i in range(1000):
+        cat_id    = random.choice(CAT_POOL)
         cat_obj   = next((c for c in CATEGORIES if c['id'] == cat_id), None)
         cat_label = cat_obj['label'] if cat_obj else cat_id
-        tracking  = generate_tracking()
-        created   = (now - timedelta(days=days_ago)).strftime('%Y-%m-%d %H:%M:%S')
-        updated   = (now - timedelta(days=max(0, days_ago - random.randint(1,4)))).strftime('%Y-%m-%d %H:%M:%S')
-        notes     = 'Issue resolved by Dept. of Public Works. Thank you for your report.' if status in ('Resolved','Closed') else ''
+
+        street_name, base_lat, base_lng = random.choice(STREETS)
+        # scatter coordinates slightly around the street anchor
+        lat = round(base_lat + random.uniform(-0.003, 0.003), 6)
+        lng = round(base_lng + random.uniform(-0.003, 0.003), 6)
+        num = random.randint(10, 999)
+        address = f"{num} {street_name}, New Haven, CT"
+
+        desc_list = DESCRIPTIONS.get(cat_id, DESCRIPTIONS['other'])
+        description = random.choice(desc_list)
+
+        status = random.choice(STATUS_POOL)
+
+        # spread submissions over the past 365 days, weighted toward recent
+        days_ago = int(random.betavariate(1.5, 5) * 365)  # skewed toward recent
+        created_dt = now - timedelta(days=days_ago,
+                                     hours=random.randint(0, 23),
+                                     minutes=random.randint(0, 59))
+        created = created_dt.strftime('%Y-%m-%d %H:%M:%S')
+
+        # updated sometime after creation (sooner for resolved tickets)
+        if status in ('Resolved', 'Closed'):
+            update_lag = random.randint(1, min(days_ago, 14)) if days_ago > 0 else 0
+            notes = random.choice([
+                'Issue resolved by Dept. of Public Works. Thank you for your report.',
+                'Crew dispatched and repair completed.',
+                'Verified resolved on-site. Case closed.',
+                'Work order completed. Please resubmit if issue recurs.',
+            ])
+        elif status in ('Assigned', 'In Progress'):
+            update_lag = random.randint(0, min(days_ago, 5)) if days_ago > 0 else 0
+            notes = random.choice([
+                'Ticket assigned to Public Works. Estimated response within 5 business days.',
+                'Crew scheduled for next available work order.',
+                'Under review by city department.',
+                '',
+            ])
+        else:
+            update_lag = 0
+            notes = ''
+
+        updated_dt = created_dt + timedelta(days=update_lag, hours=random.randint(0, 8))
+        updated = updated_dt.strftime('%Y-%m-%d %H:%M:%S')
+
+        # ~60% of submissions include contact info
+        if random.random() < 0.60:
+            contact_name = random.choice(NAMES)
+            first = contact_name.split()[0].lower()
+            last  = contact_name.split()[-1].lower()
+            contact_email = f"{first}.{last}{random.randint(1,99)}@email.com"
+            contact_phone = f"203-{random.randint(200,999)}-{random.randint(1000,9999)}"
+        else:
+            contact_name = contact_email = contact_phone = ''
+
+        tracking = generate_tracking()
+
         db.execute("""
             INSERT INTO submissions
               (tracking_number,category,category_label,description,address,
                lat,lng,photos,contact_name,contact_email,contact_phone,
                status,notes,created_at,updated_at)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """, (tracking,cat_id,cat_label,desc,addr,lat,lng,'[]','','','',status,notes,created,updated))
+        """, (tracking, cat_id, cat_label, description, address,
+              lat, lng, '[]', contact_name, contact_email, contact_phone,
+              status, notes, created, updated))
+        rows_inserted += 1
+
     db.commit()
     return redirect(url_for('admin'))
 
