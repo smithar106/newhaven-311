@@ -1,6 +1,6 @@
 """New Haven 311 — Mobile citizen services app."""
 import os, json, csv, io, uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from flask import (Flask, render_template, request, redirect,
                    url_for, jsonify, g, Response)
@@ -218,6 +218,7 @@ def track():
 @app.route('/admin')
 @require_admin
 def admin():
+    from collections import Counter
     db   = get_db()
     rows = db.execute('SELECT * FROM submissions ORDER BY created_at DESC').fetchall()
     submissions = []
@@ -227,20 +228,73 @@ def admin():
         s['cat_obj'] = next((c for c in CATEGORIES if c['id'] == s['category']), None)
         submissions.append(s)
 
-    from collections import Counter
-    cat_counts    = Counter(s['category_label'] for s in submissions)
+    now = datetime.utcnow()
+
+    # KPI: this week
+    week_ago  = (now - timedelta(days=7)).strftime('%Y-%m-%d')
+    this_week = sum(1 for s in submissions if str(s['created_at'])[:10] >= week_ago)
+
+    # KPI: avg resolution days
+    res_times = []
+    for s in submissions:
+        if s['status'] in ('Resolved', 'Closed') and s.get('updated_at') and s.get('created_at'):
+            try:
+                c = datetime.fromisoformat(str(s['created_at'])[:19])
+                u = datetime.fromisoformat(str(s['updated_at'])[:19])
+                d = (u - c).total_seconds() / 86400
+                if d >= 0:
+                    res_times.append(d)
+            except Exception:
+                pass
+    avg_resolution = round(sum(res_times) / len(res_times), 1) if res_times else 0
+
+    # Chart: daily counts last 30 days
+    daily_labels, daily_counts_list = [], []
+    for i in range(29, -1, -1):
+        day = (now - timedelta(days=i))
+        daily_labels.append(day.strftime('%b %d'))
+        daily_counts_list.append(sum(
+            1 for s in submissions if str(s['created_at'])[:10] == day.strftime('%Y-%m-%d')
+        ))
+
+    # Chart: by category
+    cat_counts = Counter(s['category_label'] for s in submissions)
+    cat_chart_labels, cat_chart_values, cat_chart_colors = [], [], []
+    for label, count in sorted(cat_counts.items(), key=lambda x: -x[1]):
+        cat_obj = next((c for c in CATEGORIES if c['label'] == label), None)
+        cat_chart_labels.append(label)
+        cat_chart_values.append(count)
+        cat_chart_colors.append(cat_obj['color'] if cat_obj else '#4A5568')
+
+    # Chart: by status
+    STATUS_COLORS = {
+        'Submitted':   '#2B6CB0', 'In Review':  '#D69E2E',
+        'Assigned':    '#805AD5', 'In Progress':'#C53030',
+        'Resolved':    '#276749', 'Closed':     '#718096',
+    }
     status_counts = Counter(s['status'] for s in submissions)
+    status_chart_labels = list(status_counts.keys())
+    status_chart_values = [status_counts[k] for k in status_chart_labels]
+    status_chart_colors = [STATUS_COLORS.get(k, '#4A5568') for k in status_chart_labels]
 
     return render_template('admin.html',
-        submissions=submissions,
-        total=len(submissions),
-        open_count=sum(1 for s in submissions if s['status'] not in ('Resolved','Closed')),
-        resolved=status_counts.get('Resolved', 0),
-        cat_counts=dict(cat_counts),
-        status_counts=dict(status_counts),
-        categories=CATEGORIES,
-        statuses=STATUSES,
-        city=CITY_NAME,
+        submissions         = submissions,
+        total               = len(submissions),
+        open_count          = sum(1 for s in submissions if s['status'] not in ('Resolved','Closed')),
+        resolved            = status_counts.get('Resolved', 0),
+        this_week           = this_week,
+        avg_resolution      = avg_resolution,
+        daily_labels        = json.dumps(daily_labels),
+        daily_counts        = json.dumps(daily_counts_list),
+        cat_chart_labels    = json.dumps(cat_chart_labels),
+        cat_chart_values    = json.dumps(cat_chart_values),
+        cat_chart_colors    = json.dumps(cat_chart_colors),
+        status_chart_labels = json.dumps(status_chart_labels),
+        status_chart_values = json.dumps(status_chart_values),
+        status_chart_colors = json.dumps(status_chart_colors),
+        categories          = CATEGORIES,
+        statuses            = STATUSES,
+        city                = CITY_NAME,
     )
 
 
@@ -253,6 +307,82 @@ def admin_update(sub_id):
         SET status=?, notes=?, updated_at=CURRENT_TIMESTAMP
         WHERE id=?
     """, (request.form.get('status'), request.form.get('notes',''), sub_id))
+    db.commit()
+    return redirect(url_for('admin_ticket', sub_id=sub_id))
+
+
+@app.route('/admin/ticket/<int:sub_id>')
+@require_admin
+def admin_ticket(sub_id):
+    db  = get_db()
+    row = db.execute('SELECT * FROM submissions WHERE id=?', (sub_id,)).fetchone()
+    if not row:
+        return redirect(url_for('admin'))
+    sub = dict(row)
+    sub['photos']  = json.loads(sub.get('photos', '[]'))
+    sub['cat_obj'] = next((c for c in CATEGORIES if c['id'] == sub['category']), None)
+    status_index   = STATUSES.index(sub['status']) if sub['status'] in STATUSES else 0
+    return render_template('admin_ticket.html',
+        sub=sub, statuses=STATUSES, status_index=status_index, city=CITY_NAME)
+
+
+@app.route('/admin/seed-demo', methods=['POST'])
+@require_admin
+def admin_seed_demo():
+    import random
+    db  = get_db()
+    now = datetime.utcnow()
+    DEMO = [
+        ('pothole','Large pothole cracking vehicle rims near the intersection','148 Whalley Ave, New Haven, CT',41.3101,-72.9387,28,'Resolved'),
+        ('streetlight','Street lamp dark for two weeks, safety concern at night','55 Crown St, New Haven, CT',41.3065,-72.9258,26,'Resolved'),
+        ('graffiti','Spray-painted tags on retaining wall, highly visible','22 Chapel St, New Haven, CT',41.3080,-72.9267,25,'Resolved'),
+        ('abandoned_vehicle','Silver sedan, no plates, sitting 10+ days','310 Grand Ave, New Haven, CT',41.2994,-72.9099,24,'Closed'),
+        ('illegal_dumping','Mattress and debris dumped on sidewalk overnight','88 Dixwell Ave, New Haven, CT',41.3178,-72.9368,23,'In Progress'),
+        ('missed_pickup','Recycling bins not collected on scheduled Tuesday','72 Edgewood Ave, New Haven, CT',41.3062,-72.9429,22,'Resolved'),
+        ('park_damage','Large branch blocking main path in Edgewood Park','Edgewood Park, New Haven, CT',41.3039,-72.9474,21,'Resolved'),
+        ('noise','Loud music from bar audible 4 blocks away after 2AM','200 Orange St, New Haven, CT',41.3100,-72.9230,20,'In Review'),
+        ('pothole','Several potholes along full block damaging tires','400 Elm St, New Haven, CT',41.3095,-72.9307,19,'In Progress'),
+        ('code_violation','Commercial dumpster overflowing, attracting pests','510 Howard Ave, New Haven, CT',41.2953,-72.9262,18,'Assigned'),
+        ('water_sewer','Water main crack causing bubbling pavement and leak','33 York St, New Haven, CT',41.3082,-72.9296,17,'Resolved'),
+        ('harbor_waterfront','Dock planks rotted through at Long Wharf, safety hazard','Long Wharf Dr, New Haven, CT',41.2912,-72.9166,16,'Assigned'),
+        ('streetlight','Traffic light out at busy four-way intersection','Whalley Ave & Ella Grasso Blvd, NH, CT',41.3049,-72.9436,15,'In Progress'),
+        ('graffiti','Tags on historic building facade, appears fresh','100 Audubon St, New Haven, CT',41.3118,-72.9240,14,'Submitted'),
+        ('abandoned_vehicle','RV parked on residential street 3 weeks','45 Fountain St, New Haven, CT',41.3144,-72.9344,13,'In Review'),
+        ('pothole','Deep pothole forming sinkhole, car bottomed out','201 Winthrop Ave, New Haven, CT',41.3011,-72.9196,12,'Assigned'),
+        ('missed_pickup','Entire street skipped on garbage day','66 Blake St, New Haven, CT',41.3063,-72.9332,12,'Resolved'),
+        ('park_damage','Vandalism to picnic tables in Wooster Square Park','Wooster Square Park, New Haven, CT',41.3028,-72.9155,11,'In Review'),
+        ('illegal_dumping','Household trash dumped near school storm drain','390 Quinnipiac Ave, New Haven, CT',41.3062,-72.8974,10,'Submitted'),
+        ('noise','Generator running 24/7 at construction site','900 Chapel St, New Haven, CT',41.3070,-72.9192,10,'Assigned'),
+        ('water_sewer','Sewage odor from manhole during heavy rain','120 Ferry St, New Haven, CT',41.3008,-72.9108,9,'In Progress'),
+        ('code_violation','Exterior stairs collapsed, building appears occupied','175 Shelton Ave, New Haven, CT',41.3160,-72.9460,8,'Assigned'),
+        ('pothole','Pothole causing bikes to crash near Yale campus','Prospect St & Sachem St, New Haven, CT',41.3188,-72.9264,7,'Submitted'),
+        ('streetlight','Flickering lamp buzzing all night near apartments','44 Trumbull St, New Haven, CT',41.3097,-72.9252,7,'In Review'),
+        ('harbor_waterfront','Dead fish washing ashore at Lighthouse Point','Lighthouse Point Park, New Haven, CT',41.2566,-72.8983,6,'Submitted'),
+        ('graffiti','Tags on playground equipment, needs urgent removal','East Rock Park, New Haven, CT',41.3288,-72.9168,6,'Submitted'),
+        ('missed_pickup','Christmas tree left curbside not picked up','27 Maple St, New Haven, CT',41.3130,-72.9290,5,'In Review'),
+        ('abandoned_vehicle','Burned-out vehicle blocking one lane of traffic','180 Quinnipiac Ave, New Haven, CT',41.3060,-72.8990,5,'Submitted'),
+        ('park_damage','Tennis court net torn down, frame bent beyond use','Beaver Ponds Park, New Haven, CT',41.3230,-72.9380,4,'Submitted'),
+        ('pothole','New pothole opened after street flooding last week','55 Lloyd St, New Haven, CT',41.2987,-72.9230,4,'Submitted'),
+        ('water_sewer','Fire hydrant leaking steadily into street for days','300 Whalley Ave, New Haven, CT',41.3060,-72.9360,3,'In Review'),
+        ('noise','Bar music audible inside homes 4 blocks away nightly','138 Crown St, New Haven, CT',41.3059,-72.9244,3,'Submitted'),
+        ('illegal_dumping','Electronics and appliances dumped in alley overnight','211 River St, New Haven, CT',41.2940,-72.9210,2,'Submitted'),
+        ('code_violation','Abandoned storefront with broken windows open to public','88 Grand Ave, New Haven, CT',41.3000,-72.9110,1,'Submitted'),
+        ('streetlight','Solar walkway lights all dark along entire park path','West River Memorial Park, NH, CT',41.3078,-72.9520,1,'Submitted'),
+    ]
+    for cat_id, desc, addr, lat, lng, days_ago, status in DEMO:
+        cat_obj   = next((c for c in CATEGORIES if c['id'] == cat_id), None)
+        cat_label = cat_obj['label'] if cat_obj else cat_id
+        tracking  = generate_tracking()
+        created   = (now - timedelta(days=days_ago)).strftime('%Y-%m-%d %H:%M:%S')
+        updated   = (now - timedelta(days=max(0, days_ago - random.randint(1,4)))).strftime('%Y-%m-%d %H:%M:%S')
+        notes     = 'Issue resolved by Dept. of Public Works. Thank you for your report.' if status in ('Resolved','Closed') else ''
+        db.execute("""
+            INSERT INTO submissions
+              (tracking_number,category,category_label,description,address,
+               lat,lng,photos,contact_name,contact_email,contact_phone,
+               status,notes,created_at,updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (tracking,cat_id,cat_label,desc,addr,lat,lng,'[]','','','',status,notes,created,updated))
     db.commit()
     return redirect(url_for('admin'))
 

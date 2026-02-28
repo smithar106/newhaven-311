@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ sub.tracking_number }} — New Haven 311 Admin</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C;min-height:100vh}
+
+/* ── nav ── */
+.nav-bar{position:sticky;top:0;z-index:200;background:#00356B;color:#fff;padding:0 24px;display:flex;align-items:center;height:52px;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.nav-btn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:7px;padding:6px 14px;font-size:.8rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s}
+.nav-btn:hover{background:rgba(255,255,255,.22)}
+.nav-logo{font-size:1rem;font-weight:800;color:#fff}
+.nav-right{margin-left:auto;display:flex;gap:8px}
+
+/* ── container ── */
+.container{max-width:1100px;margin:0 auto;padding:24px 20px}
+
+/* ── breadcrumb ── */
+.breadcrumb{font-size:.8rem;color:#718096;margin-bottom:16px}
+.breadcrumb a{color:#00356B;text-decoration:none;font-weight:600}
+.breadcrumb a:hover{text-decoration:underline}
+.breadcrumb span{margin:0 6px}
+
+/* ── ticket hero ── */
+.ticket-hero{background:#fff;border-radius:14px;padding:20px 24px;box-shadow:0 1px 6px rgba(0,0,0,.08);margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-left:5px solid #00356B}
+.hero-tracking{font-family:monospace;font-size:1.5rem;font-weight:800;color:#00356B;letter-spacing:.5px}
+.hero-cat{font-size:.95rem;color:#4A5568;font-weight:600;margin-top:4px}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:20px;font-size:.8rem;font-weight:700}
+.s-Submitted{background:#EBF8FF;color:#2B6CB0}
+.s-In-Review{background:#FFFBEB;color:#D69E2E}
+.s-Assigned{background:#FAF5FF;color:#805AD5}
+.s-In-Progress{background:#FFF5F5;color:#C53030}
+.s-Resolved{background:#E6F7EF;color:#276749}
+.s-Closed{background:#F7FAFC;color:#718096}
+.hero-right{margin-left:auto;font-size:.78rem;color:#A0AEC0;text-align:right}
+
+/* ── two-col grid ── */
+.ticket-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start}
+@media(max-width:900px){.ticket-grid{grid-template-columns:1fr}}
+
+/* ── cards ── */
+.card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+.card h3{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+
+/* ── detail rows ── */
+.detail-row{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.detail-row:last-child{margin-bottom:0}
+.detail-icon{font-size:16px;width:22px;flex-shrink:0;margin-top:1px}
+.detail-label{font-size:.73rem;color:#718096;min-width:72px;font-weight:600;margin-top:2px}
+.detail-value{font-size:.88rem;font-weight:600;color:#1A202C;flex:1;word-break:break-word;line-height:1.5}
+
+/* ── notes box ── */
+.notes-box{background:#FFFBEB;border-left:3px solid #D69E2E;border-radius:0 8px 8px 0;padding:10px 14px;font-size:.83rem;color:#744210;line-height:1.55;margin-top:12px}
+
+/* ── timeline ── */
+.tl-step{display:flex;gap:12px;padding-bottom:14px;position:relative}
+.tl-step:last-child{padding-bottom:0}
+.tl-left{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;z-index:1}
+.tl-dot.done{background:#00356B;color:#fff}
+.tl-dot.current{background:#286DC0;color:#fff;box-shadow:0 0 0 4px #EBF0FF}
+.tl-dot.pending{background:#E2E8F0;color:#A0AEC0}
+.tl-line{flex:1;width:2px;background:#E2E8F0;margin:3px 0}
+.tl-step:last-child .tl-line{display:none}
+.tl-content{padding-top:5px}
+.tl-title{font-size:.88rem;font-weight:600}
+.tl-title.done{color:#00356B}
+.tl-title.current{color:#286DC0}
+.tl-title.pending{color:#A0AEC0}
+.tl-desc{font-size:.75rem;color:#718096;margin-top:2px}
+
+/* ── update form ── */
+.update-form label{display:block;font-size:.78rem;font-weight:600;color:#2D3748;margin-bottom:5px}
+.update-form select,.update-form textarea{width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:10px 12px;font-size:.88rem;font-family:inherit;margin-bottom:14px;background:#FAFAFA}
+.update-form select:focus,.update-form textarea:focus{border-color:#00356B;outline:none;background:#fff}
+.update-form textarea{resize:vertical;min-height:88px}
+.save-btn{width:100%;background:#00356B;color:#fff;border:none;border-radius:9px;padding:13px;font-size:.95rem;font-weight:700;cursor:pointer;transition:background .15s}
+.save-btn:hover{background:#002a54}
+
+/* ── map ── */
+#ticket-map{height:260px;border-radius:10px 10px 0 0}
+.map-no-location{height:120px;display:flex;align-items:center;justify-content:center;color:#A0AEC0;font-size:.85rem;background:#F7FAFC;border-radius:10px}
+
+/* ── photos ── */
+.photos-grid{display:flex;gap:8px;flex-wrap:wrap}
+.photos-grid img{width:calc(33.33% - 6px);border-radius:8px;aspect-ratio:1;object-fit:cover;cursor:pointer;transition:opacity .15s}
+.photos-grid img:hover{opacity:.85}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="/admin" class="nav-btn">← Dashboard</a>
+  <div class="nav-logo" style="margin-left:8px">⚓ New Haven 311</div>
+  <div class="nav-right">
+    <a href="/" class="nav-btn" target="_blank">Public Site</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="/admin">Dashboard</a>
+    <span>/</span>
+    <span>{{ sub.tracking_number }}</span>
+  </div>
+
+  <!-- Hero strip -->
+  <div class="ticket-hero">
+    <div>
+      <div class="hero-tracking">{{ sub.tracking_number }}</div>
+      <div class="hero-cat">
+        {% if sub.cat_obj %}{{ sub.cat_obj.icon }} {% endif %}{{ sub.category_label }}
+      </div>
+    </div>
+    <span class="status-badge s-{{ sub.status | replace(' ', '-') }}">
+      {% if sub.status == 'Resolved' %}✓ {% endif %}{{ sub.status }}
+    </span>
+    <div class="hero-right">
+      <div>Submitted {{ sub.created_at[:16] }}</div>
+      {% if sub.updated_at and sub.updated_at != sub.created_at %}
+      <div style="margin-top:3px">Updated {{ sub.updated_at[:16] }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="ticket-grid">
+
+    <!-- LEFT: details + timeline + update -->
+    <div>
+
+      <!-- Details -->
+      <div class="card">
+        <h3>Report Details</h3>
+        {% if sub.address %}
+        <div class="detail-row">
+          <span class="detail-icon">📍</span>
+          <span class="detail-label">Location</span>
+          <span class="detail-value">{{ sub.address }}</span>
+        </div>
+        {% endif %}
+        {% if sub.description %}
+        <div class="detail-row">
+          <span class="detail-icon">📝</span>
+          <span class="detail-label">Description</span>
+          <span class="detail-value">{{ sub.description }}</span>
+        </div>
+        {% endif %}
+        <div class="detail-row">
+          <span class="detail-icon">📋</span>
+          <span class="detail-label">Category</span>
+          <span class="detail-value">{% if sub.cat_obj %}{{ sub.cat_obj.icon }} {% endif %}{{ sub.category_label }}</span>
+        </div>
+        {% if sub.contact_name %}
+        <div class="detail-row">
+          <span class="detail-icon">👤</span>
+          <span class="detail-label">Contact</span>
+          <span class="detail-value">
+            {{ sub.contact_name }}{% if sub.contact_email %} · <a href="mailto:{{ sub.contact_email }}" style="color:#00356B">{{ sub.contact_email }}</a>{% endif %}{% if sub.contact_phone %} · {{ sub.contact_phone }}{% endif %}
+          </span>
+        </div>
+        {% endif %}
+        <div class="detail-row" style="margin-bottom:0">
+          <span class="detail-icon">🔖</span>
+          <span class="detail-label">Tracking</span>
+          <span class="detail-value" style="font-family:monospace;color:#00356B">{{ sub.tracking_number }}</span>
+        </div>
+        {% if sub.notes %}
+        <div class="notes-box"><strong>Staff notes:</strong> {{ sub.notes }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Timeline -->
+      <div class="card">
+        <h3>Status Timeline</h3>
+        {% set steps = [
+          ('Submitted',   '1', 'Report received by New Haven 311'),
+          ('In Review',   '2', 'Staff reviewing and categorizing'),
+          ('Assigned',    '3', 'Routed to city department'),
+          ('In Progress', '4', 'Crew working on the issue'),
+          ('Resolved',    '✓', 'Issue has been addressed'),
+          ('Closed',      '✕', 'Case closed'),
+        ] %}
+        {% for step_name, step_num, step_desc in steps %}
+          {% if loop.index0 < status_index %}
+            {% set dot_cls = 'done' %} {% set title_cls = 'done' %}
+          {% elif loop.index0 == status_index %}
+            {% set dot_cls = 'current' %} {% set title_cls = 'current' %}
+          {% else %}
+            {% set dot_cls = 'pending' %} {% set title_cls = 'pending' %}
+          {% endif %}
+          <div class="tl-step">
+            <div class="tl-left">
+              <div class="tl-dot {{ dot_cls }}">{{ '✓' if dot_cls == 'done' else step_num }}</div>
+              <div class="tl-line"></div>
+            </div>
+            <div class="tl-content">
+              <div class="tl-title {{ title_cls }}">{{ step_name }}</div>
+              <div class="tl-desc">{{ step_desc }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Update form -->
+      <div class="card">
+        <h3>Update Status</h3>
+        <form class="update-form" method="POST" action="/admin/update/{{ sub.id }}">
+          <label>Status</label>
+          <select name="status">
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if s == sub.status %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+          <label>Notes for resident (optional)</label>
+          <textarea name="notes" placeholder="Update visible to the resident when they track their report…">{{ sub.notes or '' }}</textarea>
+          <button type="submit" class="save-btn">Save Update</button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: map + photos -->
+    <div>
+
+      <!-- Map -->
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+        {% if sub.lat and sub.lng %}
+        <div id="ticket-map"></div>
+        {% else %}
+        <div class="map-no-location">📍 No location provided</div>
+        {% endif %}
+      </div>
+
+      <!-- Photos -->
+      {% if sub.photos %}
+      <div class="card">
+        <h3>Photos ({{ sub.photos | length }})</h3>
+        <div class="photos-grid">
+          {% for p in sub.photos %}
+          <img src="{{ p }}" alt="Report photo" onclick="window.open('{{ p }}','_blank')" title="Click to view full size">
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% if sub.lat and sub.lng %}
+<script>
+(function(){
+  const lat   = {{ sub.lat }};
+  const lng   = {{ sub.lng }};
+  const color = '{{ sub.cat_obj.color if sub.cat_obj else "#718096" }}';
+  const map   = L.map('ticket-map').setView([lat, lng], 16);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+    attribution:'© OpenStreetMap © CARTO', maxZoom:19
+  }).addTo(map);
+  L.circleMarker([lat, lng], {
+    radius:12, color:'#fff', weight:3, fillColor:color, fillOpacity:.9
+  }).addTo(map)
+   .bindPopup('<strong>{{ sub.tracking_number }}</strong><br>{{ sub.category_label }}<br>{{ sub.address or "" }}')
+   .openPopup();
+})();
+</script>
+{% endif %}
+</body>
+</html>

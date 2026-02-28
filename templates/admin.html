@@ -3,107 +3,124 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — New Haven 311</title>
+<title>Admin Dashboard — New Haven 311</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C}
-  .header{background:#00356B;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
-  .header-left{display:flex;align-items:center;gap:12px}
-  .seal{width:36px;height:36px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .header h1{font-size:1.1rem;font-weight:700}
-  .header p{font-size:.72rem;opacity:.8}
-  .header-right{font-size:.78rem;opacity:.7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C;min-height:100vh}
 
-  .container{max-width:1200px;margin:0 auto;padding:20px}
+/* ── sticky nav ── */
+.nav-bar{position:sticky;top:0;z-index:200;background:#00356B;color:#fff;padding:0 24px;display:flex;align-items:center;height:52px;gap:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.nav-logo{font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px;color:#fff;text-decoration:none;white-space:nowrap}
+.nav-links{display:flex;gap:2px;margin-left:20px}
+.nav-link{color:rgba(255,255,255,.65);font-size:.8rem;font-weight:600;padding:6px 12px;border-radius:6px;text-decoration:none;transition:all .15s;cursor:pointer;background:none;border:none}
+.nav-link:hover,.nav-link.active{color:#fff;background:rgba(255,255,255,.15)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.nav-btn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:7px;padding:6px 14px;font-size:.8rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s}
+.nav-btn:hover{background:rgba(255,255,255,.22)}
+.nav-btn.seed{background:#276749;border-color:#276749}
+.nav-btn.seed:hover{background:#1f5436}
 
-  /* stats */
-  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-  .stat-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
-  .stat-card .stat-val{font-size:2rem;font-weight:800;line-height:1}
-  .stat-card .stat-label{font-size:.75rem;color:#718096;margin-top:4px;font-weight:600}
-  .stat-card.blue .stat-val{color:#00356B}
-  .stat-card.orange .stat-val{color:#DD6B20}
-  .stat-card.green .stat-val{color:#276749}
-  .stat-card.purple .stat-val{color:#805AD5}
+/* ── page ── */
+.container{max-width:1280px;margin:0 auto;padding:24px 20px}
 
-  /* filters */
-  .filters{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .filters label{font-size:.78rem;font-weight:600;color:#718096}
-  select,input[type=text]{border:1.5px solid #E2E8F0;border-radius:7px;padding:7px 10px;font-size:.83rem;background:#FAFAFA;color:#1A202C;outline:none;font-family:inherit}
-  select:focus,input[type=text]:focus{border-color:#00356B}
-  .filter-btn{background:#00356B;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:.83rem;font-weight:600;cursor:pointer}
-  .reset-btn{background:#fff;color:#718096;border:1.5px solid #E2E8F0;border-radius:7px;padding:8px 14px;font-size:.83rem;font-weight:600;cursor:pointer}
-  .view-toggle{margin-left:auto;display:flex;gap:6px}
-  .toggle-btn{background:#F7FAFC;border:1.5px solid #E2E8F0;border-radius:7px;padding:7px 12px;font-size:.8rem;font-weight:600;cursor:pointer;color:#718096}
-  .toggle-btn.active{background:#00356B;color:#fff;border-color:#00356B}
+/* ── seed bar ── */
+.seed-bar{background:#E6F7EF;border:1px solid #9AE6B4;border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:.85rem;color:#276749;font-weight:500}
+.seed-bar form{margin-left:auto}
 
-  /* map */
-  #admin-map{height:320px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px;display:none}
-  #admin-map.visible{display:block}
+/* ── KPI row ── */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:#fff;border-radius:12px;padding:18px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-card .stat-val{font-size:2.2rem;font-weight:800;line-height:1}
+.stat-card .stat-label{font-size:.73rem;color:#718096;margin-top:5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.stat-card.blue .stat-val{color:#00356B}
+.stat-card.orange .stat-val{color:#DD6B20}
+.stat-card.green .stat-val{color:#276749}
+.stat-card.purple .stat-val{color:#805AD5}
+.stat-card.teal .stat-val{color:#065666}
 
-  /* table */
-  .table-wrap{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
-  table{width:100%;border-collapse:collapse;font-size:.82rem}
-  thead{background:#F7FAFC}
-  th{padding:11px 14px;text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#718096;border-bottom:1px solid #E2E8F0;white-space:nowrap}
-  td{padding:11px 14px;border-bottom:1px solid #F0F2F7;vertical-align:top}
-  tr:last-child td{border-bottom:none}
-  tr:hover td{background:#FAFBFF}
+/* ── charts row ── */
+.charts-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-card{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.chart-card h3{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#718096;margin-bottom:14px}
+.chart-wrap{position:relative}
+.line-wrap{height:175px}
+.bar-wrap{height:215px}
+.donut-wrap{height:175px}
 
-  .track-chip{font-family:monospace;font-size:.78rem;font-weight:700;color:#00356B;white-space:nowrap}
-  .cat-chip{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;font-weight:600;color:#2D3748}
-  .status-badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:.73rem;font-weight:700}
-  .s-Submitted{background:#EBF8FF;color:#2B6CB0}
-  .s-In\ Review{background:#FFFBEB;color:#D69E2E}
-  .s-Assigned{background:#FAF5FF;color:#805AD5}
-  .s-In\ Progress{background:#FFF5F5;color:#C53030}
-  .s-Resolved{background:#E6F7EF;color:#276749}
-  .s-Closed{background:#F7FAFC;color:#718096}
+/* ── filters ── */
+.filters{background:#fff;border-radius:12px;padding:12px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.filters label{font-size:.78rem;font-weight:600;color:#718096}
+select,input[type=text]{border:1.5px solid #E2E8F0;border-radius:7px;padding:7px 10px;font-size:.83rem;background:#FAFAFA;color:#1A202C;outline:none;font-family:inherit}
+select:focus,input[type=text]:focus{border-color:#00356B}
+.filter-btn{background:#00356B;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:.83rem;font-weight:600;cursor:pointer}
+.reset-btn{background:#fff;color:#718096;border:1.5px solid #E2E8F0;border-radius:7px;padding:8px 14px;font-size:.83rem;font-weight:600;cursor:pointer}
+.view-toggle{margin-left:auto;display:flex;gap:6px}
+.toggle-btn{background:#F7FAFC;border:1.5px solid #E2E8F0;border-radius:7px;padding:7px 12px;font-size:.8rem;font-weight:600;cursor:pointer;color:#718096}
+.toggle-btn.active{background:#00356B;color:#fff;border-color:#00356B}
 
-  .addr-cell{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4A5568;font-size:.78rem}
-  .desc-cell{max-width:200px;color:#4A5568;font-size:.78rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .date-cell{white-space:nowrap;color:#718096;font-size:.75rem}
-  .actions-cell{white-space:nowrap}
+/* ── table ── */
+#admin-map{height:340px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:14px;display:none}
+#admin-map.visible{display:block}
+.table-wrap{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead{background:#F7FAFC}
+th{padding:11px 14px;text-align:left;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#718096;border-bottom:1px solid #E2E8F0;white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid #F0F2F7;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.data-row{cursor:pointer;transition:background .12s}
+.data-row:hover td{background:#EBF0FF}
+.track-chip{font-family:monospace;font-size:.78rem;font-weight:700;color:#00356B;white-space:nowrap}
+.cat-chip{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;font-weight:600;color:#2D3748}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:700}
+.s-Submitted{background:#EBF8FF;color:#2B6CB0}
+.s-In\ Review{background:#FFFBEB;color:#D69E2E}
+.s-Assigned{background:#FAF5FF;color:#805AD5}
+.s-In\ Progress{background:#FFF5F5;color:#C53030}
+.s-Resolved{background:#E6F7EF;color:#276749}
+.s-Closed{background:#F7FAFC;color:#718096}
+.addr-cell{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4A5568;font-size:.78rem}
+.desc-cell{max-width:220px;color:#4A5568;font-size:.78rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.date-cell{white-space:nowrap;color:#718096;font-size:.75rem}
+.no-data{text-align:center;padding:48px;color:#A0AEC0}
+.no-data .icon{font-size:40px;margin-bottom:10px}
 
-  /* update modal */
-  .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:16px}
-  .modal-overlay.open{display:flex}
-  .modal{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
-  .modal h3{font-size:1rem;font-weight:700;margin-bottom:16px;color:#00356B}
-  .modal label{display:block;font-size:.8rem;font-weight:600;color:#2D3748;margin-bottom:5px}
-  .modal select,.modal textarea{width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:10px 12px;font-size:.88rem;font-family:inherit;margin-bottom:14px}
-  .modal textarea{resize:vertical;min-height:80px}
-  .modal-btns{display:flex;gap:8px}
-  .modal-btns button{flex:1;padding:12px;border-radius:9px;font-size:.9rem;font-weight:700;cursor:pointer;border:none}
-  .modal-save{background:#00356B;color:#fff}
-  .modal-cancel{background:#F7FAFC;color:#718096;border:1.5px solid #E2E8F0}
+/* ── view arrow ── */
+.view-arrow{color:#A0AEC0;font-size:.82rem;white-space:nowrap}
 
-  .edit-btn{background:#EBF0FF;color:#00356B;border:none;border-radius:6px;padding:5px 10px;font-size:.75rem;font-weight:700;cursor:pointer}
-  .edit-btn:hover{background:#00356B;color:#fff}
-
-  .no-data{text-align:center;padding:40px;color:#A0AEC0}
-  .no-data .icon{font-size:36px;margin-bottom:8px}
-
-  @media(max-width:768px){
-    .stats-row{grid-template-columns:1fr 1fr}
-    .table-wrap{overflow-x:auto}
-  }
+@media(max-width:1100px){.charts-row{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:1fr}.table-wrap{overflow-x:auto}.nav-links{display:none}}
+@media(max-width:480px){.stats-row{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-left">
-    <div class="seal">⭐</div>
-    <div><h1>New Haven 311 — Admin</h1><p>City Services Dashboard</p></div>
+<nav class="nav-bar">
+  <div class="nav-logo">⚓ New Haven 311</div>
+  <div class="nav-links">
+    <span class="nav-link active">Dashboard</span>
+    <button class="nav-link" onclick="setView('table')">Reports</button>
+    <button class="nav-link" onclick="setView('map')">Map</button>
   </div>
-  <div class="header-right">{{ total }} total reports</div>
-</div>
+  <div class="nav-right">
+    <a href="/admin/export" class="nav-btn">⬇ Export CSV</a>
+    <a href="/" class="nav-btn" target="_blank">← Public Site</a>
+  </div>
+</nav>
 
 <div class="container">
 
-  <!-- Stats -->
+  {% if total == 0 %}
+  <div class="seed-bar">
+    <span>📊 No data yet — seed 35 realistic demo submissions to populate your dashboard.</span>
+    <form action="/admin/seed-demo" method="POST">
+      <button type="submit" class="nav-btn seed">+ Load Demo Data</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- KPI Cards -->
   <div class="stats-row">
     <div class="stat-card blue">
       <div class="stat-val">{{ total }}</div>
@@ -118,8 +135,28 @@
       <div class="stat-label">Resolved</div>
     </div>
     <div class="stat-card purple">
-      <div class="stat-val">{{ cat_counts|length }}</div>
-      <div class="stat-label">Categories Active</div>
+      <div class="stat-val">{{ this_week }}</div>
+      <div class="stat-label">This Week</div>
+    </div>
+    <div class="stat-card teal">
+      <div class="stat-val">{{ avg_resolution }}</div>
+      <div class="stat-label">Avg Resolution Days</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>Reports — Last 30 Days</h3>
+      <div class="chart-wrap line-wrap"><canvas id="chart-line"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>By Category</h3>
+      <div class="chart-wrap bar-wrap"><canvas id="chart-bar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>By Status</h3>
+      <div class="chart-wrap donut-wrap"><canvas id="chart-donut"></canvas></div>
     </div>
   </div>
 
@@ -144,15 +181,14 @@
     <button class="reset-btn" onclick="resetFilters()">Reset</button>
     <div class="view-toggle">
       <button class="toggle-btn active" id="btn-table" onclick="setView('table')">📋 Table</button>
-      <button class="toggle-btn" id="btn-map" onclick="setView('map')">🗺️ Map</button>
-      <a href="/admin/export" class="toggle-btn" style="text-decoration:none">⬇️ CSV</a>
+      <button class="toggle-btn" id="btn-map" onclick="setView('map')">🗺 Map</button>
     </div>
   </div>
 
-  <!-- Map view -->
+  <!-- Map -->
   <div id="admin-map"></div>
 
-  <!-- Table view -->
+  <!-- Table -->
   <div class="table-wrap" id="table-view">
     <table>
       <thead>
@@ -163,7 +199,7 @@
           <th>Description</th>
           <th>Status</th>
           <th>Submitted</th>
-          <th>Action</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="table-body">
@@ -171,7 +207,8 @@
         <tr class="data-row"
             data-cat="{{ s.category_label }}"
             data-status="{{ s.status }}"
-            data-search="{{ s.tracking_number }} {{ s.address }} {{ s.description }}">
+            data-search="{{ s.tracking_number }} {{ s.address }} {{ s.description }}"
+            onclick="window.location='/admin/ticket/{{ s.id }}'">
           <td><span class="track-chip">{{ s.tracking_number }}</span></td>
           <td>
             <span class="cat-chip">
@@ -183,9 +220,7 @@
           <td><div class="desc-cell">{{ s.description or '—' }}</div></td>
           <td><span class="status-badge s-{{ s.status }}">{{ s.status }}</span></td>
           <td><span class="date-cell">{{ s.created_at[:16] }}</span></td>
-          <td class="actions-cell">
-            <button class="edit-btn" onclick="openModal({{ s.id }},'{{ s.status }}',`{{ s.notes | replace('`','\\`') }}`)">Update</button>
-          </td>
+          <td><span class="view-arrow">→</span></td>
         </tr>
         {% else %}
         <tr><td colspan="7"><div class="no-data"><div class="icon">📭</div>No reports yet</div></td></tr>
@@ -196,48 +231,84 @@
 
 </div>
 
-<!-- Update modal -->
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <h3>Update Report Status</h3>
-    <form method="POST" id="update-form">
-      <label>Status</label>
-      <select name="status" id="modal-status">
-        {% for s in statuses %}
-        <option value="{{ s }}">{{ s }}</option>
-        {% endfor %}
-      </select>
-      <label>Notes for resident</label>
-      <textarea name="notes" id="modal-notes" placeholder="Optional update visible to the resident…"></textarea>
-      <div class="modal-btns">
-        <button type="button" class="modal-cancel" onclick="closeModal()">Cancel</button>
-        <button type="submit" class="modal-save">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ── data from Flask ───────────────────────────────────────────────────────────
-const allSubs = {{ submissions | tojson }};
-const catColors = {
-  {% for c in categories %}"{{ c.id }}":"{{ c.color }}",{% endfor %}
-};
+// ── chart data ────────────────────────────────────────────────────────────
+const dailyLabels  = {{ daily_labels | safe }};
+const dailyCounts  = {{ daily_counts | safe }};
+const catLabels    = {{ cat_chart_labels | safe }};
+const catValues    = {{ cat_chart_values | safe }};
+const catColors    = {{ cat_chart_colors | safe }};
+const statusLabels = {{ status_chart_labels | safe }};
+const statusValues = {{ status_chart_values | safe }};
+const statusColors = {{ status_chart_colors | safe }};
 
-// ── modal ────────────────────────────────────────────────────────────────────
-function openModal(id, status, notes) {
-  document.getElementById('update-form').action = `/admin/update/${id}`;
-  document.getElementById('modal-status').value = status;
-  document.getElementById('modal-notes').value  = notes || '';
-  document.getElementById('modal').classList.add('open');
-}
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
-document.getElementById('modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('modal')) closeModal();
+Chart.defaults.font.family = "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+Chart.defaults.font.size   = 11;
+
+// Line chart
+new Chart(document.getElementById('chart-line'), {
+  type: 'line',
+  data: {
+    labels: dailyLabels,
+    datasets: [{
+      data: dailyCounts,
+      borderColor: '#00356B',
+      backgroundColor: 'rgba(0,53,107,.08)',
+      borderWidth: 2, tension: 0.35, fill: true,
+      pointRadius: 3, pointHoverRadius: 5,
+      pointBackgroundColor: '#00356B',
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { maxTicksLimit: 8, color: '#A0AEC0' } },
+      y: { beginAtZero: true, ticks: { precision: 0, color: '#A0AEC0' }, grid: { color: '#F0F2F7' } }
+    }
+  }
 });
 
-// ── filter ───────────────────────────────────────────────────────────────────
+// Horizontal bar chart
+new Chart(document.getElementById('chart-bar'), {
+  type: 'bar',
+  data: {
+    labels: catLabels,
+    datasets: [{
+      data: catValues,
+      backgroundColor: catColors.map(c => c + 'CC'),
+      borderColor: catColors,
+      borderWidth: 1.5,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, ticks: { precision: 0, color: '#A0AEC0' }, grid: { color: '#F0F2F7' } },
+      y: { ticks: { color: '#4A5568', font: { size: 10 } }, grid: { display: false } }
+    }
+  }
+});
+
+// Donut chart
+new Chart(document.getElementById('chart-donut'), {
+  type: 'doughnut',
+  data: {
+    labels: statusLabels,
+    datasets: [{ data: statusValues, backgroundColor: statusColors, borderWidth: 2, borderColor: '#fff', hoverOffset: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { position: 'bottom', labels: { padding: 8, font: { size: 10 }, boxWidth: 10, color: '#4A5568' } } }
+  }
+});
+
+// ── table filter ──────────────────────────────────────────────────────────
 function applyFilter() {
   const cat    = document.getElementById('f-cat').value.toLowerCase();
   const status = document.getElementById('f-status').value.toLowerCase();
@@ -255,7 +326,9 @@ function resetFilters() {
   applyFilter();
 }
 
-// ── map view ─────────────────────────────────────────────────────────────────
+// ── map view ──────────────────────────────────────────────────────────────
+const allSubs = {{ submissions | tojson }};
+const catColorMap = { {% for c in categories %}"{{ c.id }}":"{{ c.color }}",{% endfor %} };
 let adminMap, mapInited = false;
 
 function setView(v) {
@@ -268,23 +341,18 @@ function setView(v) {
 
 function initAdminMap() {
   mapInited = true;
-  adminMap = L.map('admin-map').setView([32.7767, -96.7970], 11);
+  adminMap = L.map('admin-map').setView([41.3083, -72.9279], 13);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
     attribution:'© OpenStreetMap © CARTO', maxZoom:19
   }).addTo(adminMap);
-
   allSubs.forEach(s => {
     if (!s.lat || !s.lng) return;
-    const color = catColors[s.category] || '#718096';
-    const marker = L.circleMarker([s.lat, s.lng], {
+    const color = catColorMap[s.category] || '#718096';
+    L.circleMarker([s.lat, s.lng], {
       radius:8, color:'#fff', weight:2, fillColor:color, fillOpacity:.85
-    }).addTo(adminMap);
-    marker.bindPopup(`
-      <strong>${s.tracking_number}</strong><br>
-      ${s.category_label}<br>
-      <em>${s.status}</em><br>
-      ${(s.address||'').substring(0,50)}
-    `);
+    }).addTo(adminMap)
+     .bindPopup(`<strong>${s.tracking_number}</strong><br>${s.category_label}<br><em>${s.status}</em><br>${(s.address||'').substring(0,50)}`)
+     .on('click', () => window.location = '/admin/ticket/' + s.id);
   });
 }
 </script>
