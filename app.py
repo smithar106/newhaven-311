@@ -162,7 +162,7 @@ def send_staff_notification(to_email, to_name, tracking, category_label,
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
 
-        ticket_url = f"https://newhaven.civicosapp.com/track?tracking={tracking}"
+        ticket_url = f"https://newhaven.mycity311.co/track?tracking={tracking}"
         subject    = f"[{city} 311] New {category_label} report — {tracking}"
 
         html_body = f"""
@@ -215,7 +215,7 @@ def send_confirmation_email(to_email, tracking, category_label, address, city):
         from email.mime.multipart import MIMEMultipart
 
         subject = f"Your {city} 311 Report — {tracking}"
-        track_url = f"https://newhaven.civicosapp.com/track?tracking={tracking}"
+        track_url = f"https://newhaven.mycity311.co/track?tracking={tracking}"
 
         html_body = f"""
 <!DOCTYPE html>
