@@ -89,6 +89,14 @@ tr:last-child td{border-bottom:none}
 /* ── view arrow ── */
 .view-arrow{color:#A0AEC0;font-size:.82rem;white-space:nowrap}
 
+/* ── pagination ── */
+.pagination{display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid #F0F2F7;background:#fff;border-radius:0 0 12px 12px}
+.pg-btn{background:#fff;border:1.5px solid #E2E8F0;border-radius:7px;padding:6px 14px;font-size:.8rem;font-weight:600;color:#4A5568;cursor:pointer;transition:all .15s}
+.pg-btn:hover:not(:disabled){border-color:#00356B;color:#00356B}
+.pg-btn:disabled{opacity:.4;cursor:default}
+.pg-info{font-size:.8rem;color:#718096;margin:0 4px}
+.pg-count{margin-left:auto;font-size:.78rem;color:#A0AEC0}
+
 @media(max-width:1100px){.charts-row{grid-template-columns:1fr 1fr}}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:1fr}.table-wrap{overflow-x:auto}.nav-links{display:none}}
 @media(max-width:480px){.stats-row{grid-template-columns:1fr 1fr}}
@@ -104,6 +112,8 @@ tr:last-child td{border-bottom:none}
     <button class="nav-link" onclick="setView('map')">Map</button>
   </div>
   <div class="nav-right">
+    <a href="/admin/routing" class="nav-btn">✉ Routing</a>
+    <a href="/stats" class="nav-btn" target="_blank">📊 Public Stats</a>
     <a href="/admin/export" class="nav-btn">⬇ Export CSV</a>
     <a href="/" class="nav-btn" target="_blank">← Public Site</a>
   </div>
@@ -113,7 +123,7 @@ tr:last-child td{border-bottom:none}
 
   {% if total == 0 %}
   <div class="seed-bar">
-    <span>📊 No data yet — seed 35 realistic demo submissions to populate your dashboard.</span>
+    <span>📊 No data yet — seed 1,000 realistic demo submissions to populate your dashboard.</span>
     <form action="/admin/seed-demo" method="POST">
       <button type="submit" class="nav-btn seed">+ Load Demo Data</button>
     </form>
@@ -227,6 +237,12 @@ tr:last-child td{border-bottom:none}
         {% endfor %}
       </tbody>
     </table>
+    <div class="pagination" id="pagination">
+      <button class="pg-btn" id="pg-prev" onclick="changePage(-1)">← Prev</button>
+      <span class="pg-info" id="pg-info"></span>
+      <button class="pg-btn" id="pg-next" onclick="changePage(1)">Next →</button>
+      <span class="pg-count" id="pg-count"></span>
+    </div>
   </div>
 
 </div>
@@ -308,23 +324,54 @@ new Chart(document.getElementById('chart-donut'), {
   }
 });
 
-// ── table filter ──────────────────────────────────────────────────────────
+// ── table filter + pagination ─────────────────────────────────────────────
+const PAGE_SIZE = 25;
+let currentPage = 1;
+let visibleRows = [];
+
 function applyFilter() {
   const cat    = document.getElementById('f-cat').value.toLowerCase();
   const status = document.getElementById('f-status').value.toLowerCase();
   const search = document.getElementById('f-search').value.toLowerCase();
-  document.querySelectorAll('.data-row').forEach(row => {
+  const allRows = Array.from(document.querySelectorAll('.data-row'));
+  visibleRows = allRows.filter(row => {
     const matchCat    = !cat    || row.dataset.cat.toLowerCase().includes(cat);
     const matchStatus = !status || row.dataset.status.toLowerCase() === status;
     const matchSearch = !search || row.dataset.search.toLowerCase().includes(search);
-    row.style.display = (matchCat && matchStatus && matchSearch) ? '' : 'none';
+    return matchCat && matchStatus && matchSearch;
   });
+  // hide all, then show current page
+  allRows.forEach(r => r.style.display = 'none');
+  currentPage = 1;
+  renderPage();
 }
+
+function renderPage() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end   = start + PAGE_SIZE;
+  visibleRows.forEach((r, i) => r.style.display = (i >= start && i < end) ? '' : 'none');
+  const totalPages = Math.max(1, Math.ceil(visibleRows.length / PAGE_SIZE));
+  document.getElementById('pg-info').textContent  = `Page ${currentPage} of ${totalPages}`;
+  document.getElementById('pg-count').textContent = `${visibleRows.length} record${visibleRows.length !== 1 ? 's' : ''}`;
+  document.getElementById('pg-prev').disabled = currentPage <= 1;
+  document.getElementById('pg-next').disabled = currentPage >= totalPages;
+}
+
+function changePage(dir) {
+  const totalPages = Math.ceil(visibleRows.length / PAGE_SIZE);
+  currentPage = Math.max(1, Math.min(totalPages, currentPage + dir));
+  renderPage();
+  document.getElementById('table-view').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function resetFilters() {
   ['f-cat','f-status'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-search').value = '';
   applyFilter();
 }
+
+// init pagination on load
+window.addEventListener('DOMContentLoaded', applyFilter);
 
 // ── map view ──────────────────────────────────────────────────────────────
 const allSubs = {{ submissions | tojson }};

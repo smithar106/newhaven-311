@@ -11,6 +11,13 @@ app.config['SECRET_KEY']         = os.environ.get('SECRET_KEY', 'newhaven311secr
 app.config['UPLOAD_FOLDER']      = os.path.join('static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
+# ── email config (optional — set env vars to enable) ──────────────────────
+SMTP_HOST  = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+SMTP_PORT  = int(os.environ.get('SMTP_PORT', '587'))
+SMTP_USER  = os.environ.get('SMTP_USER', '')
+SMTP_PASS  = os.environ.get('SMTP_PASS', '')
+MAIL_FROM  = os.environ.get('MAIL_FROM', SMTP_USER)
+
 ADMIN_USER = os.environ.get('ADMIN_USER', 'admin')
 ADMIN_PASS = os.environ.get('ADMIN_PASS', 'newhaven2026')
 
@@ -86,6 +93,13 @@ def init_db():
     sql_type = "SERIAL" if USE_PG else "INTEGER"
     pk = "SERIAL PRIMARY KEY" if USE_PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
     lat_type = "DOUBLE PRECISION" if USE_PG else "REAL"
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS category_routes (
+            category_id        TEXT PRIMARY KEY,
+            responsible_name   TEXT DEFAULT '',
+            responsible_email  TEXT DEFAULT ''
+        )
+    """)
     db.execute(f"""
         CREATE TABLE IF NOT EXISTS submissions (
             id              {pk},
@@ -136,6 +150,124 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED
 
 
+# ── email helper ──────────────────────────────────────────────────────────────
+
+def send_staff_notification(to_email, to_name, tracking, category_label,
+                             address, description, submitter_email, city):
+    """Forward new ticket to the category-responsible staff member."""
+    if not SMTP_USER or not SMTP_PASS or not to_email:
+        return
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        ticket_url = f"https://newhaven.civicosapp.com/track?tracking={tracking}"
+        subject    = f"[{city} 311] New {category_label} report — {tracking}"
+
+        html_body = f"""
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;margin:0;padding:20px">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+    <div style="background:#00356B;padding:20px 24px">
+      <h1 style="color:#fff;font-size:1.1rem;margin:0">⚓ {city} 311 — New Report Assigned</h1>
+    </div>
+    <div style="padding:24px">
+      <p style="font-size:.9rem;color:#4A5568;margin-bottom:16px">Hi {to_name},<br><br>A new <strong>{category_label}</strong> report has been submitted and routed to you.</p>
+      <table style="width:100%;font-size:.88rem;border-collapse:collapse;background:#F7FAFC;border-radius:8px;overflow:hidden">
+        <tr><td style="padding:10px 14px;color:#718096;font-weight:600;width:120px;border-bottom:1px solid #E2E8F0">Tracking</td><td style="padding:10px 14px;font-family:monospace;font-weight:700;color:#00356B;border-bottom:1px solid #E2E8F0">{tracking}</td></tr>
+        <tr><td style="padding:10px 14px;color:#718096;font-weight:600;border-bottom:1px solid #E2E8F0">Category</td><td style="padding:10px 14px;font-weight:600;border-bottom:1px solid #E2E8F0">{category_label}</td></tr>
+        {"<tr><td style='padding:10px 14px;color:#718096;font-weight:600;border-bottom:1px solid #E2E8F0'>Location</td><td style='padding:10px 14px;border-bottom:1px solid #E2E8F0'>" + address + "</td></tr>" if address else ""}
+        {"<tr><td style='padding:10px 14px;color:#718096;font-weight:600;border-bottom:1px solid #E2E8F0'>Description</td><td style='padding:10px 14px;border-bottom:1px solid #E2E8F0'>" + description + "</td></tr>" if description else ""}
+        {"<tr><td style='padding:10px 14px;color:#718096;font-weight:600'>Submitter</td><td style='padding:10px 14px'><a href='mailto:" + submitter_email + "'>" + submitter_email + "</a></td></tr>" if submitter_email else ""}
+      </table>
+      <div style="margin:20px 0 0;text-align:center">
+        <a href="{ticket_url}" style="display:inline-block;background:#00356B;color:#fff;text-decoration:none;border-radius:10px;padding:12px 24px;font-weight:700;font-size:.9rem">View Ticket</a>
+      </div>
+    </div>
+    <div style="background:#F7FAFC;padding:12px 24px;text-align:center;font-size:.72rem;color:#A0AEC0">
+      {city} 311 — Category Routing · Powered by CivicOS
+    </div>
+  </div>
+</body></html>"""
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From']    = f"{city} 311 <{MAIL_FROM}>"
+        msg['To']      = to_email
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(MAIL_FROM, to_email, msg.as_string())
+    except Exception:
+        pass
+
+
+def send_confirmation_email(to_email, tracking, category_label, address, city):
+    """Send submission confirmation email. Silently skips if SMTP not configured."""
+    if not SMTP_USER or not SMTP_PASS or not to_email:
+        return
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        subject = f"Your {city} 311 Report — {tracking}"
+        track_url = f"https://newhaven.civicosapp.com/track?tracking={tracking}"
+
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;margin:0;padding:20px">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+    <div style="background:#00356B;padding:24px 24px 20px;text-align:center">
+      <div style="font-size:2rem;margin-bottom:8px">⚓</div>
+      <h1 style="color:#fff;font-size:1.3rem;margin:0">{city} 311</h1>
+      <p style="color:rgba(255,255,255,.75);font-size:.85rem;margin:4px 0 0">Report Confirmed</p>
+    </div>
+    <div style="padding:28px 24px">
+      <div style="background:#E6F7EF;border-radius:12px;padding:16px;text-align:center;margin-bottom:24px">
+        <div style="font-size:2rem;margin-bottom:6px">✅</div>
+        <div style="font-size:.8rem;color:#718096;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Your Tracking Number</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#00356B;font-family:monospace;letter-spacing:1px">{tracking}</div>
+      </div>
+      <table style="width:100%;font-size:.88rem;border-collapse:collapse">
+        <tr><td style="color:#718096;padding:6px 0;width:90px;font-weight:600">Category</td><td style="color:#1A202C;font-weight:600">{category_label}</td></tr>
+        {"<tr><td style='color:#718096;padding:6px 0;font-weight:600'>Location</td><td style='color:#1A202C'>" + address + "</td></tr>" if address else ""}
+        <tr><td style="color:#718096;padding:6px 0;font-weight:600">Status</td><td><span style="background:#EBF8FF;color:#2B6CB0;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700">Submitted</span></td></tr>
+      </table>
+      <div style="margin:24px 0 0;text-align:center">
+        <a href="{track_url}" style="display:inline-block;background:#00356B;color:#fff;text-decoration:none;border-radius:10px;padding:13px 28px;font-weight:700;font-size:.95rem">Track Your Report</a>
+      </div>
+      <p style="font-size:.78rem;color:#A0AEC0;text-align:center;margin-top:20px;line-height:1.6">
+        We'll review your report shortly and route it to the right department.<br>
+        Keep this tracking number handy to check on updates.
+      </p>
+    </div>
+    <div style="background:#F7FAFC;padding:14px 24px;text-align:center;font-size:.72rem;color:#A0AEC0">
+      {city} 311 — Non-Emergency City Services · Powered by CivicOS
+    </div>
+  </div>
+</body>
+</html>"""
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From']    = f"{city} 311 <{MAIL_FROM}>"
+        msg['To']      = to_email
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(MAIL_FROM, to_email, msg.as_string())
+    except Exception:
+        pass  # never break submission flow due to email failure
+
+
 # ── routes ────────────────────────────────────────────────────────────────────
 
 @app.route('/')
@@ -162,6 +294,10 @@ def submit():
             f.save(os.path.join(app.config['UPLOAD_FOLDER'], fname))
             photos.append(f'/static/uploads/{fname}')
 
+    contact_email = request.form.get('contact_email', '')
+    address       = request.form.get('address', '')
+    description   = request.form.get('description', '')
+
     tracking = generate_tracking()
     db.execute("""
         INSERT INTO submissions
@@ -170,16 +306,34 @@ def submit():
         VALUES (?,?,?,?,?,?,?,?,?,?,?)
     """, (
         tracking, cat, cat_label,
-        request.form.get('description', ''),
-        request.form.get('address', ''),
+        description, address,
         float(lat) if lat else None,
         float(lng) if lng else None,
         json.dumps(photos),
         request.form.get('contact_name', ''),
-        request.form.get('contact_email', ''),
+        contact_email,
         request.form.get('contact_phone', ''),
     ))
     db.commit()
+
+    # ── send confirmation email to resident ───────────────────────────────
+    if contact_email:
+        send_confirmation_email(contact_email, tracking, cat_label, address, CITY_NAME)
+
+    # ── forward ticket to category-responsible staff member ───────────────
+    route_row = db.execute(
+        'SELECT * FROM category_routes WHERE category_id=?', (cat,)
+    ).fetchone()
+    if route_row:
+        route = dict(route_row)
+        if route.get('responsible_email'):
+            send_staff_notification(
+                route['responsible_email'],
+                route.get('responsible_name', 'Staff'),
+                tracking, cat_label, address, description,
+                contact_email, CITY_NAME
+            )
+
     return redirect(url_for('confirm', tracking=tracking))
 
 
@@ -605,6 +759,94 @@ def admin_seed_demo():
 
     db.commit()
     return redirect(url_for('admin'))
+
+
+@app.route('/admin/routing', methods=['GET', 'POST'])
+@require_admin
+def admin_routing():
+    db = get_db()
+    if request.method == 'POST':
+        for cat in CATEGORIES:
+            name  = request.form.get(f"name_{cat['id']}", '').strip()
+            email = request.form.get(f"email_{cat['id']}", '').strip()
+            db.execute("""
+                DELETE FROM category_routes WHERE category_id=?
+            """, (cat['id'],))
+            db.execute("""
+                INSERT INTO category_routes (category_id, responsible_name, responsible_email)
+                VALUES (?,?,?)
+            """, (cat['id'], name, email))
+        db.commit()
+        return redirect(url_for('admin_routing'))
+
+    rows = db.execute('SELECT * FROM category_routes').fetchall()
+    routes = {r['category_id']: dict(r) for r in rows}
+    return render_template('admin_routing.html',
+        categories=CATEGORIES, routes=routes, city=CITY_NAME)
+
+
+@app.route('/stats')
+def public_stats():
+    from collections import Counter
+    db   = get_db()
+    rows = db.execute('SELECT * FROM submissions ORDER BY created_at DESC').fetchall()
+    submissions = [dict(r) for r in rows]
+
+    total    = len(submissions)
+    resolved = sum(1 for s in submissions if s['status'] in ('Resolved', 'Closed'))
+    open_ct  = total - resolved
+    pct_resolved = round(resolved / total * 100) if total else 0
+
+    # avg resolution days
+    res_times = []
+    now = datetime.utcnow()
+    for s in submissions:
+        if s['status'] in ('Resolved', 'Closed') and s.get('updated_at') and s.get('created_at'):
+            try:
+                c = datetime.fromisoformat(str(s['created_at'])[:19])
+                u = datetime.fromisoformat(str(s['updated_at'])[:19])
+                d = (u - c).total_seconds() / 86400
+                if d >= 0: res_times.append(d)
+            except Exception:
+                pass
+    avg_resolution = round(sum(res_times) / len(res_times), 1) if res_times else 0
+
+    # this month
+    this_month_str = now.strftime('%Y-%m')
+    this_month = sum(1 for s in submissions if str(s['created_at'])[:7] == this_month_str)
+
+    # top categories
+    from collections import Counter
+    cat_counts = Counter(s['category_label'] for s in submissions)
+    top_cats = []
+    for label, count in cat_counts.most_common(6):
+        cat_obj = next((c for c in CATEGORIES if c['label'] == label), None)
+        top_cats.append({'label': label, 'count': count,
+                         'icon': cat_obj['icon'] if cat_obj else '📋',
+                         'color': cat_obj['color'] if cat_obj else '#4A5568',
+                         'pct': round(count / total * 100) if total else 0})
+
+    # monthly trend (last 6 months)
+    monthly_labels, monthly_counts = [], []
+    for i in range(5, -1, -1):
+        mo = (now.replace(day=1) - timedelta(days=i * 28)).strftime('%Y-%m')
+        lbl = (now.replace(day=1) - timedelta(days=i * 28)).strftime('%b %Y')
+        monthly_labels.append(lbl)
+        monthly_counts.append(sum(1 for s in submissions if str(s['created_at'])[:7] == mo))
+
+    # recent resolved (last 5)
+    recent_resolved = [s for s in submissions if s['status'] in ('Resolved', 'Closed')][:5]
+    for s in recent_resolved:
+        s['cat_obj'] = next((c for c in CATEGORIES if c['id'] == s['category']), None)
+
+    return render_template('stats.html',
+        city=CITY_NAME, total=total, resolved=resolved, open_ct=open_ct,
+        pct_resolved=pct_resolved, avg_resolution=avg_resolution,
+        this_month=this_month, top_cats=top_cats,
+        monthly_labels=json.dumps(monthly_labels),
+        monthly_counts=json.dumps(monthly_counts),
+        recent_resolved=recent_resolved,
+    )
 
 
 @app.route('/admin/export')

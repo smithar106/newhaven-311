@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>{{ city }} 311 — City Transparency Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C;min-height:100vh}
+
+/* ── header ── */
+.header{background:#00356B;color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.seal{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.header-text h1{font-size:1.15rem;font-weight:700}
+.header-text p{font-size:.72rem;opacity:.8;margin-top:1px}
+.header-right{margin-left:auto}
+.header-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:7px 14px;font-size:.8rem;font-weight:600;text-decoration:none;white-space:nowrap}
+
+/* ── hero ── */
+.hero{
+  background:linear-gradient(135deg,#00356B 0%,#00519E 60%,#286DC0 100%);
+  color:#fff;padding:32px 20px 28px;text-align:center
+}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 14px;font-size:.75rem;font-weight:700;letter-spacing:.4px;margin-bottom:14px}
+.hero h2{font-size:1.6rem;font-weight:800;margin-bottom:6px}
+.hero p{font-size:.88rem;opacity:.8;max-width:400px;margin:0 auto;line-height:1.5}
+
+/* ── container ── */
+.container{max-width:700px;margin:0 auto;padding:20px 16px 40px}
+
+/* ── stats row ── */
+.stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+@media(min-width:480px){.stats-row{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);text-align:center}
+.stat-val{font-size:2rem;font-weight:800;line-height:1}
+.stat-label{font-size:.7rem;color:#718096;margin-top:5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;line-height:1.3}
+.stat-card.blue  .stat-val{color:#00356B}
+.stat-card.green .stat-val{color:#276749}
+.stat-card.orange .stat-val{color:#DD6B20}
+.stat-card.teal  .stat-val{color:#065666}
+
+/* ── resolution meter ── */
+.resolution-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+.resolution-card h3{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:14px}
+.meter-label{display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;margin-bottom:7px}
+.meter-bar{background:#E2E8F0;border-radius:20px;height:14px;overflow:hidden;margin-bottom:10px}
+.meter-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#276749,#38A169);transition:width .5s ease}
+.meter-sub{font-size:.75rem;color:#718096}
+
+/* ── chart card ── */
+.chart-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+.chart-card h3{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:14px}
+.chart-wrap{position:relative;height:200px}
+
+/* ── top issues ── */
+.issues-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+.issues-card h3{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:14px}
+.issue-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.issue-row:last-child{margin-bottom:0}
+.issue-icon{font-size:1.3rem;width:32px;flex-shrink:0;text-align:center}
+.issue-body{flex:1}
+.issue-label{font-size:.85rem;font-weight:600;color:#1A202C}
+.issue-bar-wrap{height:6px;background:#E2E8F0;border-radius:20px;margin-top:4px;overflow:hidden}
+.issue-bar{height:100%;border-radius:20px}
+.issue-count{font-size:.78rem;font-weight:700;color:#718096;white-space:nowrap}
+
+/* ── recent resolved ── */
+.recent-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+.recent-card h3{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:14px}
+.resolved-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #F0F2F7}
+.resolved-row:last-child{border-bottom:none;padding-bottom:0}
+.rr-dot{width:28px;height:28px;border-radius:50%;background:#E6F7EF;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px;color:#276749;font-weight:700}
+.rr-body{flex:1;min-width:0}
+.rr-cat{font-size:.82rem;font-weight:600;color:#1A202C}
+.rr-addr{font-size:.75rem;color:#718096;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rr-date{font-size:.72rem;color:#A0AEC0;white-space:nowrap}
+
+/* ── footer CTA ── */
+.cta-card{background:#00356B;border-radius:14px;padding:24px 20px;text-align:center;color:#fff;margin-bottom:16px}
+.cta-card h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.cta-card p{font-size:.82rem;opacity:.8;margin-bottom:16px;line-height:1.5}
+.cta-btn{display:inline-block;background:#fff;color:#00356B;font-weight:700;border-radius:10px;padding:12px 24px;font-size:.95rem;text-decoration:none;transition:opacity .15s}
+.cta-btn:hover{opacity:.9}
+
+/* ── updated note ── */
+.updated-note{text-align:center;font-size:.72rem;color:#A0AEC0;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="seal">⚓</div>
+  <div class="header-text">
+    <h1>{{ city }} 311</h1>
+    <p>Transparency Dashboard</p>
+  </div>
+  <div class="header-right">
+    <a href="/" class="header-btn">Report an Issue</a>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-badge">📊 City Performance — Public Dashboard</div>
+  <h2>{{ city }} Open Government</h2>
+  <p>Track how the city handles every 311 report — from submission to resolution. Updated in real time.</p>
+</div>
+
+<div class="container">
+
+  <!-- KPI Cards -->
+  <div class="stats-row" style="margin-top:20px">
+    <div class="stat-card blue">
+      <div class="stat-val">{{ total }}</div>
+      <div class="stat-label">Total Reports</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-val">{{ pct_resolved }}%</div>
+      <div class="stat-label">Resolution Rate</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-val">{{ avg_resolution }}</div>
+      <div class="stat-label">Avg Days to Resolve</div>
+    </div>
+    <div class="stat-card teal">
+      <div class="stat-val">{{ this_month }}</div>
+      <div class="stat-label">Reports This Month</div>
+    </div>
+  </div>
+
+  <!-- Resolution meter -->
+  <div class="resolution-card">
+    <h3>Resolution Progress</h3>
+    <div class="meter-label">
+      <span>✓ Resolved / Closed: {{ resolved }}</span>
+      <span>{{ pct_resolved }}%</span>
+    </div>
+    <div class="meter-bar">
+      <div class="meter-fill" style="width:{{ pct_resolved }}%"></div>
+    </div>
+    <div class="meter-sub">{{ open_ct }} report{{ 's' if open_ct != 1 else '' }} currently open · {{ resolved }} resolved or closed</div>
+  </div>
+
+  <!-- Monthly trend chart -->
+  <div class="chart-card">
+    <h3>Reports Submitted — Last 6 Months</h3>
+    <div class="chart-wrap">
+      <canvas id="chart-monthly"></canvas>
+    </div>
+  </div>
+
+  <!-- Top issues -->
+  <div class="issues-card">
+    <h3>Top Issue Types</h3>
+    {% set max_count = top_cats[0].count if top_cats else 1 %}
+    {% for cat in top_cats %}
+    <div class="issue-row">
+      <span class="issue-icon">{{ cat.icon }}</span>
+      <div class="issue-body">
+        <div class="issue-label">{{ cat.label }}</div>
+        <div class="issue-bar-wrap">
+          <div class="issue-bar" style="width:{{ (cat.count / max_count * 100) | round }}%;background:{{ cat.color }}"></div>
+        </div>
+      </div>
+      <span class="issue-count">{{ cat.count }} ({{ cat.pct }}%)</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Recently resolved -->
+  {% if recent_resolved %}
+  <div class="recent-card">
+    <h3>Recently Resolved</h3>
+    {% for s in recent_resolved %}
+    <div class="resolved-row">
+      <div class="rr-dot">✓</div>
+      <div class="rr-body">
+        <div class="rr-cat">{% if s.cat_obj %}{{ s.cat_obj.icon }} {% endif %}{{ s.category_label }}</div>
+        <div class="rr-addr">{{ s.address or 'Location not specified' }}</div>
+      </div>
+      <div class="rr-date">{{ s.updated_at[:10] if s.updated_at else '' }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- CTA -->
+  <div class="cta-card">
+    <h3>See a problem in {{ city }}?</h3>
+    <p>Submit a report and track it in real time. Every report goes directly to the right city department.</p>
+    <a href="/" class="cta-btn">Report an Issue</a>
+  </div>
+
+  <div class="updated-note">Data updates in real time · {{ city }} 311 powered by CivicOS</div>
+
+</div>
+
+<script>
+const monthlyLabels = {{ monthly_labels | safe }};
+const monthlyCounts = {{ monthly_counts | safe }};
+
+Chart.defaults.font.family = "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+Chart.defaults.font.size   = 11;
+
+new Chart(document.getElementById('chart-monthly'), {
+  type: 'bar',
+  data: {
+    labels: monthlyLabels,
+    datasets: [{
+      data: monthlyCounts,
+      backgroundColor: 'rgba(0,53,107,.18)',
+      borderColor: '#00356B',
+      borderWidth: 2,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#718096' } },
+      y: { beginAtZero: true, ticks: { precision: 0, color: '#A0AEC0' }, grid: { color: '#F0F2F7' } }
+    }
+  }
+});
+</script>
+</body>
+</html>
