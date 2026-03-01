@@ -102,8 +102,31 @@ tr:last-child td{border-bottom:none}
 .pg-info{font-size:.8rem;color:#718096;margin:0 4px}
 .pg-count{margin-left:auto;font-size:.78rem;color:#A0AEC0}
 
+/* ── category performance table ── */
+.perf-card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:20px;overflow:hidden}
+.perf-card-header{padding:16px 20px 12px;border-bottom:1px solid #F0F2F7;display:flex;align-items:baseline;gap:12px}
+.perf-card-header h3{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#718096}
+.perf-card-header span{font-size:.75rem;color:#A0AEC0}
+.perf-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.perf-table th{padding:9px 16px;text-align:left;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#718096;border-bottom:1px solid #E2E8F0;white-space:nowrap;background:#FAFAFA}
+.perf-table th.center{text-align:center}
+.perf-table td{padding:10px 16px;border-bottom:1px solid #F0F2F7;vertical-align:middle}
+.perf-table tr:last-child td{border-bottom:none}
+.perf-cat{display:flex;align-items:center;gap:8px;font-weight:600;color:#1A202C}
+.perf-cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.perf-bar-wrap{display:flex;align-items:center;gap:8px}
+.perf-bar-track{flex:1;height:7px;background:#EDF2F7;border-radius:20px;overflow:hidden;min-width:60px}
+.perf-bar-fill{height:100%;border-radius:20px}
+.perf-val{font-size:.8rem;font-weight:700;white-space:nowrap;min-width:36px}
+.perf-badge{display:inline-block;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:700;text-align:center}
+.perf-fast{background:#E6F7EF;color:#276749}
+.perf-med{background:#FFFBEB;color:#B7791F}
+.perf-slow{background:#FFF5F5;color:#C53030}
+.perf-none{background:#F7FAFC;color:#A0AEC0}
+td.center{text-align:center}
+
 @media(max-width:1100px){.charts-row{grid-template-columns:1fr 1fr}}
-@media(max-width:768px){.stats-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:1fr}.table-wrap{overflow-x:auto}.nav-links{display:none}}
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:1fr}.table-wrap{overflow-x:auto}.nav-links{display:none}.perf-bar-track{display:none}}
 @media(max-width:480px){.stats-row{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -174,6 +197,68 @@ tr:last-child td{border-bottom:none}
       <div class="chart-wrap donut-wrap"><canvas id="chart-donut"></canvas></div>
     </div>
   </div>
+
+  <!-- Category Performance -->
+  {% if cat_perf %}
+  <div class="perf-card">
+    <div class="perf-card-header">
+      <h3>⚡ Category Response Performance</h3>
+      <span>Sorted fastest → slowest · avg resolution time for resolved tickets</span>
+    </div>
+    <div style="overflow-x:auto">
+    <table class="perf-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th class="center">Total</th>
+          <th class="center">Resolved</th>
+          <th>Avg Resolution Time</th>
+          <th>% Resolved within 24 h</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in cat_perf %}
+        {% if cat.avg_days is not none %}
+          {% if cat.avg_days <= 1 %}{% set tier = 'fast' %}
+          {% elif cat.avg_days <= 5 %}{% set tier = 'med' %}
+          {% else %}{% set tier = 'slow' %}{% endif %}
+        {% else %}{% set tier = 'none' %}{% endif %}
+        <tr>
+          <td>
+            <div class="perf-cat">
+              <span class="perf-cat-dot" style="background:{{ cat.color }}"></span>
+              {{ cat.icon }} {{ cat.label }}
+            </div>
+          </td>
+          <td class="center" style="color:#4A5568;font-weight:600">{{ cat.total }}</td>
+          <td class="center" style="color:#276749;font-weight:600">{{ cat.resolved }}</td>
+          <td>
+            {% if cat.avg_days is not none %}
+            <div class="perf-bar-wrap">
+              <div class="perf-bar-track">
+                <div class="perf-bar-fill" style="width:{{ [cat.avg_days / 14 * 100, 100] | min }}%;background:{{ cat.color }}"></div>
+              </div>
+              <span class="perf-badge perf-{{ tier }}">{{ cat.avg_days }}d</span>
+            </div>
+            {% else %}
+            <span class="perf-badge perf-none">No data</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="perf-bar-wrap">
+              <div class="perf-bar-track">
+                <div class="perf-bar-fill" style="width:{{ cat.pct_24h }}%;background:{% if cat.pct_24h >= 50 %}#38A169{% elif cat.pct_24h >= 20 %}#D69E2E{% else %}#E53E3E{% endif %}"></div>
+              </div>
+              <span class="perf-val" style="color:{% if cat.pct_24h >= 50 %}#276749{% elif cat.pct_24h >= 20 %}#B7791F{% else %}#C53030{% endif %}">{{ cat.pct_24h }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Filters -->
   <div class="filters">

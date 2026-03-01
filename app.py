@@ -449,6 +449,34 @@ def admin():
     status_chart_values = [status_counts[k] for k in status_chart_labels]
     status_chart_colors = [STATUS_COLORS.get(k, '#4A5568') for k in status_chart_labels]
 
+    # ── per-category performance ───────────────────────────────────────────────
+    cat_perf = []
+    for label, total_ct in Counter(s['category_label'] for s in submissions).most_common():
+        cat_obj  = next((c for c in CATEGORIES if c['label'] == label), None)
+        cat_subs = [s for s in submissions if s['category_label'] == label]
+        times, within_24h = [], 0
+        for s in cat_subs:
+            if s['status'] in ('Resolved', 'Closed') and s.get('updated_at') and s.get('created_at'):
+                try:
+                    c_dt = datetime.fromisoformat(str(s['created_at'])[:19])
+                    u_dt = datetime.fromisoformat(str(s['updated_at'])[:19])
+                    d = (u_dt - c_dt).total_seconds() / 86400
+                    if d >= 0:
+                        times.append(d)
+                        if d <= 1: within_24h += 1
+                except Exception:
+                    pass
+        cat_perf.append({
+            'label':    label,
+            'icon':     cat_obj['icon']  if cat_obj else '📋',
+            'color':    cat_obj['color'] if cat_obj else '#4A5568',
+            'total':    total_ct,
+            'resolved': sum(1 for s in cat_subs if s['status'] in ('Resolved', 'Closed')),
+            'avg_days': round(sum(times) / len(times), 1) if times else None,
+            'pct_24h':  round(within_24h / total_ct * 100) if total_ct else 0,
+        })
+    cat_perf.sort(key=lambda x: (x['avg_days'] is None, x['avg_days'] or 0))
+
     return render_template('admin.html',
         submissions         = submissions,
         total               = len(submissions),
@@ -467,6 +495,7 @@ def admin():
         categories          = CATEGORIES,
         statuses            = STATUSES,
         priorities          = PRIORITIES,
+        cat_perf            = cat_perf,
         city                = CITY_NAME,
     )
 
