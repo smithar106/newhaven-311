@@ -83,17 +83,6 @@ input:focus{border-color:#00356B;background:#fff}
   <div class="flash">✓ Routing configuration saved.</div>
   {% endif %}
 
-  <div class="info-box">
-    📬 <strong>How it works:</strong> When a ticket is submitted under a category that has a responsible email set, that person immediately receives an email with the tracking number, location, description, and a link to the ticket — so nothing falls through the cracks.
-  </div>
-
-  <div class="smtp-box">
-    <strong>⚙️ Email requires SMTP configuration (Railway environment variables):</strong>
-    Set <code>SMTP_USER</code>, <code>SMTP_PASS</code>, <code>SMTP_HOST</code> (default: smtp.gmail.com), and <code>SMTP_PORT</code> (default: 587) in your Railway service variables.
-    For Gmail, use an <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:#744210">App Password</a>.
-    If SMTP is not configured, routing emails are silently skipped.
-  </div>
-
   <form method="POST" action="/admin/routing">
     <div class="routing-card">
       <table>
