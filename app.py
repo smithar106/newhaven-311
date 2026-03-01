@@ -67,7 +67,7 @@ CATEGORIES = [
     {'id': 'noise',             'label': 'Noise Complaint',         'icon': '🔊',  'color': '#2C5282'},
     {'id': 'code_violation',    'label': 'Code Violation',          'icon': '🏠',  'color': '#9B2335'},
     {'id': 'water_sewer',       'label': 'Water / Sewer Issue',     'icon': '💧',  'color': '#2B6CB0'},
-    {'id': 'harbor_waterfront', 'label': 'Harbor / Waterfront',     'icon': '⚓',  'color': '#065666'},
+    {'id': 'traffic_signal',    'label': 'Traffic Signal Issue',    'icon': '🚦',  'color': '#2D3748'},
     {'id': 'other',             'label': 'Other',                   'icon': '📋',  'color': '#4A5568'},
 ]
 
@@ -281,13 +281,12 @@ def seed_demo_data():
             'Water pressure loss affecting entire block',
             'Manhole cover missing, open hole in roadway',
         ],
-        'harbor_waterfront': [
-            'Dock planks rotted through at Long Wharf, safety hazard',
-            'Dead fish washing ashore, possible pollution event',
-            'Waterfront railing collapsed near public walkway',
-            'Debris accumulation blocking boat launch access',
-            'Oil sheen visible on water near marina',
-            'Seawall erosion exposing unstable embankment',
+        'traffic_signal': [
+            'Traffic light stuck on red, causing long backups',
+            'Signal timing wrong, pedestrian phase too short',
+            'Left turn signal not working at major intersection',
+            'Signal head knocked sideways after collision',
+            'Crosswalk signal button broken, no audible cue',
         ],
         'other': [
             'Sidewalk heaved by tree root, tripping hazard',
@@ -322,7 +321,7 @@ def seed_demo_data():
         ['missed_pickup'] * 9 + ['illegal_dumping'] * 9 + ['noise'] * 8 +
         ['code_violation'] * 8 + ['water_sewer'] * 8 +
         ['abandoned_vehicle'] * 7 + ['park_damage'] * 6 +
-        ['harbor_waterfront'] * 3 + ['other'] * 2
+        ['traffic_signal'] * 5 + ['other'] * 2
     )
 
     random.seed(42)
@@ -938,13 +937,12 @@ def admin_seed_demo():
             'Water pressure loss affecting entire block',
             'Manhole cover missing, open hole in roadway',
         ],
-        'harbor_waterfront': [
-            'Dock planks rotted through at Long Wharf, safety hazard',
-            'Dead fish washing ashore, possible pollution event',
-            'Waterfront railing collapsed near public walkway',
-            'Debris accumulation blocking boat launch access',
-            'Oil sheen visible on water near marina',
-            'Seawall erosion exposing unstable embankment',
+        'traffic_signal': [
+            'Traffic light stuck on red, causing long backups',
+            'Signal timing wrong, pedestrian phase too short',
+            'Left turn signal not working at major intersection',
+            'Signal head knocked sideways after collision',
+            'Crosswalk signal button broken, no audible cue',
         ],
         'other': [
             'Sidewalk heaved by tree root, tripping hazard',
