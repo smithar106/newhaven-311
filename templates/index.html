@@ -108,16 +108,6 @@
   .search-row input:focus{border-color:#00356B}
   .search-btn{background:#00356B;color:#fff;border:none;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer;font-size:.9rem}
 
-  /* ── yale strip ── */
-  .yale-strip{
-    background:
-      linear-gradient(rgba(0,53,107,.82), rgba(0,53,107,.92)),
-      url('https://images.unsplash.com/photo-1562516155-e0c1ee44059b?w=800&q=80') center/cover no-repeat;
-    border-radius:12px;padding:16px;margin-bottom:12px;color:#fff;
-  }
-  .yale-strip h3{font-size:.85rem;font-weight:700;margin-bottom:4px}
-  .yale-strip p{font-size:.75rem;opacity:.8;line-height:1.5}
-
   /* ── toast ── */
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A202C;color:#fff;padding:10px 20px;border-radius:20px;font-size:.85rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
   .toast.show{opacity:1}
@@ -162,11 +152,6 @@
   <!-- Step 1: category -->
   <div id="step-cat">
 
-    <!-- Yale University strip -->
-    <div class="yale-strip">
-      <h3>🎓 Yale University Area</h3>
-      <p>For issues near Yale campus, use the categories below. City services cover all public streets, sidewalks, and parks in the Yale district.</p>
-    </div>
 
     <p class="section-title">What do you need to report?</p>
     <div class="cat-grid">
@@ -180,29 +165,6 @@
       {% endfor %}
     </div>
 
-    <!-- Waterfront info strip -->
-    <div class="info-strip" style="margin-top:16px;border-radius:12px;overflow:hidden">
-      <div class="info-chip">
-        <div class="ic-val">🌊</div>
-        <div class="ic-lbl">Long Wharf</div>
-      </div>
-      <div class="info-chip">
-        <div class="ic-val">🏛️</div>
-        <div class="ic-lbl">Historic Green</div>
-      </div>
-      <div class="info-chip">
-        <div class="ic-val">⚓</div>
-        <div class="ic-lbl">Harbor District</div>
-      </div>
-      <div class="info-chip">
-        <div class="ic-val">🎓</div>
-        <div class="ic-lbl">Yale Campus</div>
-      </div>
-      <div class="info-chip">
-        <div class="ic-val">🌳</div>
-        <div class="ic-lbl">East Rock Park</div>
-      </div>
-    </div>
 
   </div>
 
