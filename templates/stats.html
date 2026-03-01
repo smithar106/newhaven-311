@@ -16,6 +16,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .header-text p{font-size:.72rem;opacity:.8;margin-top:1px}
 .header-right{margin-left:auto}
 .header-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:7px 14px;font-size:.8rem;font-weight:600;text-decoration:none;white-space:nowrap}
+.header-hub{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 13px;font-size:.78rem;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0}
 
 /* ── hero ── */
 .hero{
@@ -95,7 +96,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <h1>{{ city }} 311</h1>
     <p>Transparency Dashboard</p>
   </div>
-  <div class="header-right">
+  <div class="header-right" style="display:flex;gap:8px;align-items:center">
+    <a href="https://hub.mycity311.co" class="header-hub" style="padding:7px 14px">All Cities</a>
     <a href="/" class="header-btn">Report an Issue</a>
   </div>
 </div>
@@ -104,6 +106,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="hero-badge">📊 City Performance — Public Dashboard</div>
   <h2>{{ city }} Open Government</h2>
   <p>Track how the city handles every 311 report — from submission to resolution. Updated in real time.</p>
+  <div style="display:flex;justify-content:center;gap:24px;margin-top:20px;flex-wrap:wrap">
+    <div style="text-align:center">
+      <div style="font-size:1.8rem;font-weight:800;line-height:1">{{ total }}</div>
+      <div style="font-size:.68rem;opacity:.7;margin-top:3px;text-transform:uppercase;letter-spacing:.8px">Total Reports</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:1.8rem;font-weight:800;line-height:1">{{ pct_resolved }}%</div>
+      <div style="font-size:.68rem;opacity:.7;margin-top:3px;text-transform:uppercase;letter-spacing:.8px">Resolved</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:1.8rem;font-weight:800;line-height:1">{{ this_month }}</div>
+      <div style="font-size:.68rem;opacity:.7;margin-top:3px;text-transform:uppercase;letter-spacing:.8px">This Month</div>
+    </div>
+  </div>
 </div>
 
 <div class="container">
