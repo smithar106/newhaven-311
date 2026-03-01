@@ -540,6 +540,85 @@ def send_confirmation_email(to_email, tracking, category_label, address, city):
         pass  # never break submission flow due to email failure
 
 
+def send_status_update_email(to_email, tracking, category_label, address, new_status, notes, city):
+    """Email the resident whenever their ticket status changes."""
+    if not SMTP_USER or not SMTP_PASS or not to_email:
+        return
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        track_url = f"https://newhaven.mycity311.co/track?tracking={tracking}"
+
+        STATUS_META = {
+            'In Review':   ('🔍', '#2B6CB0', '#EBF8FF', 'Your report is under review',
+                            'City staff are reviewing your report and will route it to the right department shortly.'),
+            'Assigned':    ('📋', '#C05621', '#FFFAF0', 'Your report has been assigned',
+                            'Your report has been assigned to a city department and is in the work queue.'),
+            'In Progress': ('🔧', '#276749', '#F0FFF4', 'Work is underway',
+                            'A crew has been dispatched to address your issue. We\'ll update you when it\'s resolved.'),
+            'Resolved':    ('✅', '#22543D', '#F0FFF4', 'Your issue has been resolved!',
+                            'The city has addressed the issue you reported. Thank you for helping improve your community.'),
+            'Closed':      ('📁', '#4A5568', '#F7FAFC', 'Your report has been closed',
+                            'This report has been marked closed by city staff.'),
+        }
+        icon, color, bg, headline, body_msg = STATUS_META.get(
+            new_status, ('📬', '#2D3748', '#F7FAFC', f'Status update: {new_status}', 'Your report status has been updated.'))
+
+        notes_html = (
+            f'<div style="background:#F7FAFC;border-left:4px solid {color};border-radius:0 8px 8px 0;'
+            f'padding:12px 16px;margin-top:16px">'
+            f'<div style="font-size:.72rem;font-weight:700;color:#718096;text-transform:uppercase;'
+            f'letter-spacing:.5px;margin-bottom:4px">Note from the city</div>'
+            f'<div style="font-size:.88rem;color:#2D3748">{notes}</div></div>'
+        ) if notes else ''
+
+        subject = f"[{city} 311] Update on your {category_label} report — {tracking}"
+        html_body = f"""<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;margin:0;padding:20px">
+<div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+  <div style="background:#00356B;padding:24px;text-align:center">
+    <div style="font-size:2rem;margin-bottom:6px">⚓</div>
+    <h1 style="color:#fff;font-size:1.1rem;margin:0">{city} 311 — Status Update</h1>
+  </div>
+  <div style="padding:24px">
+    <div style="background:{bg};border-radius:12px;padding:20px;text-align:center;margin-bottom:20px">
+      <div style="font-size:2rem;margin-bottom:6px">{icon}</div>
+      <div style="font-size:1.05rem;font-weight:800;color:{color};margin-bottom:6px">{headline}</div>
+      <div style="font-size:.82rem;color:#4A5568;line-height:1.5">{body_msg}</div>
+    </div>
+    <table style="width:100%;font-size:.88rem;border-collapse:collapse">
+      <tr><td style="color:#718096;padding:6px 0;width:90px;font-weight:600">Tracking</td><td style="font-family:monospace;font-weight:700;color:#00356B">{tracking}</td></tr>
+      <tr><td style="color:#718096;padding:6px 0;font-weight:600">Category</td><td style="font-weight:600">{category_label}</td></tr>
+      {'<tr><td style="color:#718096;padding:6px 0;font-weight:600">Location</td><td>' + address + '</td></tr>' if address else ''}
+      <tr><td style="color:#718096;padding:6px 0;font-weight:600">New Status</td><td><span style="background:{bg};color:{color};padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700">{new_status}</span></td></tr>
+    </table>
+    {notes_html}
+    <div style="margin:24px 0 0;text-align:center">
+      <a href="{track_url}" style="display:inline-block;background:#00356B;color:#fff;text-decoration:none;border-radius:10px;padding:13px 28px;font-weight:700;font-size:.95rem">Track Your Report</a>
+    </div>
+  </div>
+  <div style="background:#F7FAFC;padding:12px 24px;text-align:center;font-size:.72rem;color:#A0AEC0">
+    {city} 311 · Powered by MyCity311 · {tracking}
+  </div>
+</div>
+</body></html>"""
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From']    = f"{city} 311 <{MAIL_FROM}>"
+        msg['To']      = to_email
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(MAIL_FROM, to_email, msg.as_string())
+    except Exception:
+        pass
+
+
 # ── template globals ──────────────────────────────────────────────────────────
 @app.context_processor
 def inject_globals():
@@ -797,14 +876,33 @@ def admin():
 @app.route('/admin/update/<int:sub_id>', methods=['POST'])
 @require_admin
 def admin_update(sub_id):
-    db = get_db()
+    db      = get_db()
+    old_row = db.execute(
+        'SELECT status, contact_email, tracking_number, category_label, address FROM submissions WHERE id=?',
+        (sub_id,)
+    ).fetchone()
+
+    new_status = request.form.get('status')
+    new_notes  = request.form.get('notes', '')
+
     db.execute("""
         UPDATE submissions
         SET status=?, notes=?, priority=?, updated_at=CURRENT_TIMESTAMP
         WHERE id=?
-    """, (request.form.get('status'), request.form.get('notes',''),
-          request.form.get('priority', 'Medium'), sub_id))
+    """, (new_status, new_notes, request.form.get('priority', 'Medium'), sub_id))
     db.commit()
+
+    if old_row and new_status != old_row['status'] and old_row['contact_email']:
+        send_status_update_email(
+            old_row['contact_email'],
+            old_row['tracking_number'],
+            old_row['category_label'],
+            old_row['address'] or '',
+            new_status,
+            new_notes,
+            CITY_NAME,
+        )
+
     return redirect(url_for('admin_ticket', sub_id=sub_id))
 
 
