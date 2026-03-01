@@ -72,7 +72,7 @@
   <div class="success-card">
     <div class="checkmark">✅</div>
     <h2>Report Submitted!</h2>
-    <p>Thank you for helping keep {{ city }} safe and clean. Your report has been received and will be reviewed shortly.</p>
+    <p>Your report is live and city staff have been notified. Use your tracking number below to follow progress.</p>
     <div class="tracking-box" onclick="copyTracking()">
       <div class="label">Your Tracking Number</div>
       <div class="tracking-number" id="tracking-num">{{ sub.tracking_number }}</div>
@@ -112,6 +112,21 @@
       <span class="detail-icon">📊</span>
       <span class="detail-label">Status</span>
       <span class="detail-value" style="color:#286DC0;font-weight:700">{{ sub.status }}</span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:16px;background:#fff">
+    <div style="text-align:center;padding:14px 6px;border-right:1px solid #E2E8F0">
+      <div style="font-size:1.1rem;font-weight:800;color:#286DC0">1–2d</div>
+      <div style="font-size:.6rem;color:#718096;margin-top:2px;text-transform:uppercase;letter-spacing:.4px">First Review</div>
+    </div>
+    <div style="text-align:center;padding:14px 6px;border-right:1px solid #E2E8F0">
+      <div style="font-size:1.1rem;font-weight:800;color:#276749">Free</div>
+      <div style="font-size:.6rem;color:#718096;margin-top:2px;text-transform:uppercase;letter-spacing:.4px">For Residents</div>
+    </div>
+    <div style="text-align:center;padding:14px 6px">
+      <div style="font-size:1.1rem;font-weight:800;color:#C05621">24/7</div>
+      <div style="font-size:.6rem;color:#718096;margin-top:2px;text-transform:uppercase;letter-spacing:.4px">Tracked Live</div>
     </div>
   </div>
 

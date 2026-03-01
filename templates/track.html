@@ -101,6 +101,22 @@
   {% endif %}
 
   {% if sub %}
+
+  {% if sub.status in ('Resolved', 'Closed') %}
+  <div style="background:linear-gradient(135deg,#f0fff4,#c6f6d5);border:1.5px solid #68D391;border-radius:16px;padding:20px;margin-bottom:16px;text-align:center">
+    <div style="font-size:2rem;margin-bottom:8px">🎉</div>
+    <div style="font-size:1.05rem;font-weight:800;color:#22543D;margin-bottom:4px">Issue Resolved!</div>
+    {% if resolution_days is not none %}
+    <div style="font-size:.82rem;color:#276749;margin-bottom:4px">
+      {% if resolution_days < 1 %}Resolved in less than a day
+      {% elif resolution_days <= 1.5 %}Resolved in 1 day
+      {% else %}Resolved in {{ resolution_days }} days{% endif %}
+    </div>
+    {% endif %}
+    <div style="font-size:.72rem;color:#48BB78;margin-top:4px">Thank you for helping improve {{ city }} 🙏</div>
+  </div>
+  {% endif %}
+
   <!-- Status card -->
   <div class="info-card">
     <h3>

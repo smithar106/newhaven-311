@@ -550,8 +550,32 @@ def inject_globals():
 
 @app.route('/')
 def index():
+    db   = get_db()
+    rows = db.execute('SELECT status, created_at, updated_at FROM submissions').fetchall()
+    now  = datetime.utcnow()
+    this_month = now.strftime('%Y-%m')
+    total = len(rows)
+    resolved_month = sum(
+        1 for r in rows
+        if r['status'] in ('Resolved', 'Closed')
+        and str(r['updated_at'] or '')[:7] == this_month
+    )
+    res_times = []
+    for r in rows:
+        if r['status'] in ('Resolved', 'Closed') and r['updated_at'] and r['created_at']:
+            try:
+                c = datetime.fromisoformat(str(r['created_at'])[:19])
+                u = datetime.fromisoformat(str(r['updated_at'])[:19])
+                d = (u - c).total_seconds() / 86400
+                if 0 <= d <= 60:
+                    res_times.append(d)
+            except Exception:
+                pass
+    avg_days = round(sum(res_times) / len(res_times), 1) if res_times else None
+    quick_stats = {'total': total, 'resolved_month': resolved_month, 'avg_days': avg_days}
     return render_template('index.html', categories=CATEGORIES,
-                           city=CITY_NAME, tagline=CITY_TAGLINE)
+                           city=CITY_NAME, tagline=CITY_TAGLINE,
+                           quick_stats=quick_stats)
 
 
 @app.route('/submit', methods=['POST'])
@@ -632,7 +656,7 @@ def confirm(tracking):
 @app.route('/track')
 def track():
     tracking = request.args.get('tracking', '').strip().upper()
-    sub, cat, status_index = None, None, 0
+    sub, cat, status_index, resolution_days = None, None, 0, None
     if tracking:
         db  = get_db()
         row = db.execute('SELECT * FROM submissions WHERE tracking_number=?',
@@ -642,9 +666,19 @@ def track():
             sub['photos'] = json.loads(sub.get('photos', '[]'))
             cat = next((c for c in CATEGORIES if c['id'] == sub['category']), None)
             status_index = STATUSES.index(sub['status']) if sub['status'] in STATUSES else 0
+            if sub['status'] in ('Resolved', 'Closed') and sub.get('created_at') and sub.get('updated_at'):
+                try:
+                    c_dt = datetime.fromisoformat(str(sub['created_at'])[:19])
+                    u_dt = datetime.fromisoformat(str(sub['updated_at'])[:19])
+                    d = (u_dt - c_dt).total_seconds() / 86400
+                    if d >= 0:
+                        resolution_days = round(d, 1)
+                except Exception:
+                    pass
     return render_template('track.html', sub=sub, cat=cat,
                            tracking=tracking, statuses=STATUSES,
-                           status_index=status_index, city=CITY_NAME)
+                           status_index=status_index, city=CITY_NAME,
+                           resolution_days=resolution_days)
 
 
 @app.route('/admin')
