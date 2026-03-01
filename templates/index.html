@@ -130,20 +130,6 @@
   <button class="tab" onclick="showView('track-view',this)">🔍 Track</button>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:#fff;border-bottom:1px solid #E2E8F0">
-  <div style="text-align:center;padding:14px 8px;border-right:1px solid #E2E8F0">
-    <div style="font-size:1.3rem;font-weight:800;color:#00356B;line-height:1">{{ quick_stats.total }}</div>
-    <div style="font-size:.6rem;color:#718096;margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Reports Filed</div>
-  </div>
-  <div style="text-align:center;padding:14px 8px;border-right:1px solid #E2E8F0">
-    <div style="font-size:1.3rem;font-weight:800;color:#276749;line-height:1">{{ quick_stats.resolved_month }}</div>
-    <div style="font-size:.6rem;color:#718096;margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Resolved This Month</div>
-  </div>
-  <div style="text-align:center;padding:14px 8px">
-    <div style="font-size:1.3rem;font-weight:800;color:#C05621;line-height:1">{% if quick_stats.avg_days %}{{ quick_stats.avg_days }}d{% else %}—{% endif %}</div>
-    <div style="font-size:.6rem;color:#718096;margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Avg Resolution</div>
-  </div>
-</div>
 
 <!-- ══ REPORT VIEW ══ -->
 <div id="report" class="view active">
