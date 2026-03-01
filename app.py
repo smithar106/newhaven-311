@@ -24,6 +24,7 @@ ADMIN_PASS = os.environ.get('ADMIN_PASS', 'newhaven2026')
 CITY_NAME    = "New Haven"
 CITY_SHORT   = "NHV"
 CITY_TAGLINE = "Non-Emergency City Services"
+PUBLIC_OPT_IN = os.environ.get('PUBLIC_OPT_IN', 'true').lower() == 'true'
 
 # ── database backend detection ────────────────────────────────────────────────
 _DB_URL = os.environ.get('DATABASE_URL', '')
@@ -277,6 +278,12 @@ def send_confirmation_email(to_email, tracking, category_label, address, city):
             server.sendmail(MAIL_FROM, to_email, msg.as_string())
     except Exception:
         pass  # never break submission flow due to email failure
+
+
+# ── template globals ──────────────────────────────────────────────────────────
+@app.context_processor
+def inject_globals():
+    return {'public_opt_in': PUBLIC_OPT_IN}
 
 
 # ── routes ────────────────────────────────────────────────────────────────────
@@ -866,6 +873,66 @@ def public_stats():
         monthly_counts=json.dumps(monthly_counts),
         recent_resolved=recent_resolved,
     )
+
+
+@app.route('/api/public-stats')
+def api_public_stats():
+    if not PUBLIC_OPT_IN:
+        return jsonify({'error': 'City not participating in public dashboard'}), 403
+    from collections import Counter
+    db   = get_db()
+    rows = db.execute('SELECT * FROM submissions ORDER BY created_at DESC').fetchall()
+    submissions = [dict(r) for r in rows]
+    total    = len(submissions)
+    resolved = sum(1 for s in submissions if s['status'] in ('Resolved', 'Closed'))
+    pct_resolved = round(resolved / total * 100) if total else 0
+    now = datetime.utcnow()
+    res_times = []
+    for s in submissions:
+        if s['status'] in ('Resolved', 'Closed') and s.get('updated_at') and s.get('created_at'):
+            try:
+                c = datetime.fromisoformat(str(s['created_at'])[:19])
+                u = datetime.fromisoformat(str(s['updated_at'])[:19])
+                d = (u - c).total_seconds() / 86400
+                if d >= 0: res_times.append(d)
+            except Exception:
+                pass
+    avg_resolution = round(sum(res_times) / len(res_times), 1) if res_times else 0
+    this_month_str = now.strftime('%Y-%m')
+    this_month = sum(1 for s in submissions if str(s['created_at'])[:7] == this_month_str)
+    cat_counts = Counter(s['category_label'] for s in submissions)
+    top_cats = []
+    for label, count in cat_counts.most_common(8):
+        cat_obj = next((c for c in CATEGORIES if c['label'] == label), None)
+        cat_times = []
+        for s in submissions:
+            if s['category_label'] == label and s['status'] in ('Resolved', 'Closed'):
+                if s.get('updated_at') and s.get('created_at'):
+                    try:
+                        c_dt = datetime.fromisoformat(str(s['created_at'])[:19])
+                        u_dt = datetime.fromisoformat(str(s['updated_at'])[:19])
+                        d = (u_dt - c_dt).total_seconds() / 86400
+                        if d >= 0: cat_times.append(d)
+                    except Exception:
+                        pass
+        top_cats.append({
+            'label': label, 'count': count,
+            'icon': cat_obj['icon'] if cat_obj else '📋',
+            'color': cat_obj['color'] if cat_obj else '#4A5568',
+            'pct': round(count / total * 100) if total else 0,
+            'avg_days': round(sum(cat_times) / len(cat_times), 1) if cat_times else None,
+        })
+    monthly = []
+    for i in range(5, -1, -1):
+        mo  = (now.replace(day=1) - timedelta(days=i * 28)).strftime('%Y-%m')
+        lbl = (now.replace(day=1) - timedelta(days=i * 28)).strftime('%b %Y')
+        monthly.append({'month': lbl, 'count': sum(1 for s in submissions if str(s['created_at'])[:7] == mo)})
+    return jsonify({
+        'city': CITY_NAME, 'total': total, 'resolved': resolved,
+        'pct_resolved': pct_resolved, 'avg_resolution_days': avg_resolution,
+        'this_month': this_month, 'top_categories': top_cats,
+        'monthly_trend': monthly, 'updated_at': now.isoformat(),
+    })
 
 
 @app.route('/admin/export')
