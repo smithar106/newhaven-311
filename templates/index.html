@@ -122,12 +122,21 @@
     <h1>New Haven 311</h1>
     <p>Non-Emergency City Services</p>
   </div>
+  <a href="https://hub.mycity311.co" class="header-hub">All Cities</a>
 </div>
 
 <!-- Nav tabs -->
 <div class="tabs">
   <button class="tab active" onclick="showView('report',this)">📋 Report</button>
   <button class="tab" onclick="showView('track-view',this)">🔍 Track</button>
+</div>
+
+<div style="display:flex;gap:8px;padding:14px 16px;overflow-x:auto;background:#fff;border-bottom:1px solid #E2E8F0;-webkit-overflow-scrolling:touch">
+  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">✅ Free for residents</div>
+  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">🔒 No account needed</div>
+  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">📍 GPS-powered</div>
+  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">📱 Mobile-first</div>
+  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">🏙️ 2 cities live</div>
 </div>
 
 
@@ -241,7 +250,8 @@
 <div class="toast" id="toast"></div>
 
 <div style="text-align:center;padding:20px 16px 28px;font-size:.72rem;color:#A0AEC0;letter-spacing:.2px">
-  Powered by <a href="https://home.mycity311.co" style="color:#718096;font-weight:700;text-decoration:none">MyCity311</a>
+  Powered by <a href="https://hub.mycity311.co" style="color:#718096;font-weight:700;text-decoration:none">MyCity311</a>
+  &nbsp;·&nbsp; 2 cities live &nbsp;·&nbsp; More coming soon
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
