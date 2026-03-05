@@ -5,58 +5,262 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Report Submitted — New Haven 311</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C;min-height:100vh}
-  .header{background:#00356B;color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px;position:sticky;top:3px;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.35)}
-  .seal{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-  .header-text h1{font-size:1.25rem;font-weight:700}
-  .header-text p{font-size:.72rem;opacity:.8;margin-top:1px}
-  .header-home{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 13px;font-size:.78rem;font-weight:600;text-decoration:none;white-space:nowrap}
-  .header-hub{margin-left:auto;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 13px;font-size:.78rem;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0}
+/* ── Design Tokens ──────────────────────────────────────────────────────── */
+:root {
+  --primary:        #00356B;
+  --primary-dark:   #002a54;
+  --primary-light:  #EBF3FF;
+  --accent:         #286DC0;
+  --success:        #10B981;
+  --text-primary:   #111827;
+  --text-secondary: #4B5563;
+  --text-muted:     #9CA3AF;
+  --border:         #E5E7EB;
+  --surface:        #FFFFFF;
+  --bg:             #F3F4F8;
+  --text-xs:   0.75rem;
+  --text-sm:   0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg:   1.0625rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+}
 
-  .container{max-width:520px;margin:0 auto;padding:24px 16px}
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
 
-  .success-card{background:#fff;border-radius:16px;padding:28px 20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.09);margin-bottom:16px}
-  .checkmark{width:72px;height:72px;border-radius:50%;background:#E6F7EF;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px}
-  .success-card h2{font-size:1.3rem;font-weight:700;color:#00356B;margin-bottom:6px}
-  .success-card p{font-size:.88rem;color:#718096;line-height:1.5}
+/* ── Progress bar ───────────────────────────────────────────────────────── */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  height: 3px;
+  background: var(--border);
+}
+.progress-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 0 2px 2px 0;
+}
 
-  .tracking-box{background:#F7FAFF;border:2px solid #00356B;border-radius:12px;padding:16px;text-align:center;margin:20px 0 0}
-  .tracking-box .label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:6px}
-  .tracking-number{font-size:1.4rem;font-weight:800;color:#00356B;letter-spacing:1px;cursor:pointer}
-  .copy-hint{font-size:.72rem;color:#A0AEC0;margin-top:4px}
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  background: var(--primary);
+  color: #fff;
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  position: sticky;
+  top: 3px;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+.seal {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  border: 1.5px solid rgba(255,255,255,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.header-text h1 { font-size: var(--text-xl); font-weight: 700; letter-spacing: -.2px; line-height: 1.2 }
+.header-text p  { font-size: var(--text-xs); opacity: .72; margin-top: 1px }
+.header-btn {
+  margin-left: auto;
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: var(--r-sm);
+  padding: 6px var(--sp-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.header-btn:hover { background: rgba(255,255,255,.25) }
 
-  .detail-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:12px}
-  .detail-card h3{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:12px}
-  .detail-row{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
-  .detail-row:last-child{margin-bottom:0}
-  .detail-icon{font-size:16px;width:22px;flex-shrink:0;margin-top:1px}
-  .detail-label{font-size:.75rem;color:#718096;min-width:60px}
-  .detail-value{font-size:.85rem;font-weight:600;color:#1A202C;flex:1;word-break:break-word}
+/* ── Container ──────────────────────────────────────────────────────────── */
+.container { max-width: 520px; margin: 0 auto; padding: var(--sp-6) var(--sp-4) }
 
-  .timeline{margin:0}
-  .tl-step{display:flex;gap:12px;position:relative;padding-bottom:16px}
-  .tl-step:last-child{padding-bottom:0}
-  .tl-left{display:flex;flex-direction:column;align-items:center}
-  .tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;z-index:1}
-  .tl-dot.done{background:#00356B;color:#fff}
-  .tl-dot.pending{background:#E2E8F0;color:#A0AEC0}
-  .tl-line{flex:1;width:2px;background:#E2E8F0;margin:2px 0}
-  .tl-step:last-child .tl-line{display:none}
-  .tl-content{padding-top:4px}
-  .tl-title{font-size:.85rem;font-weight:600;color:#1A202C}
-  .tl-desc{font-size:.75rem;color:#718096;margin-top:2px}
+/* ── Success card ───────────────────────────────────────────────────────── */
+.success-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 28px var(--sp-5);
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--sp-4);
+  border: 1px solid var(--border);
+}
+.checkmark {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #DCFCE7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto var(--sp-4);
+}
+.success-card h2 { font-size: var(--text-2xl); font-weight: 800; color: var(--primary); margin-bottom: var(--sp-2) }
+.success-card p  { font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.6 }
 
-  .btn{display:block;width:100%;border-radius:12px;padding:15px;font-size:1rem;font-weight:700;text-align:center;text-decoration:none;border:none;cursor:pointer;margin-bottom:10px}
-  .btn-primary{background:#00356B;color:#fff}
-  .btn-secondary{background:#fff;color:#00356B;border:2px solid #00356B}
+.tracking-box {
+  background: var(--primary-light);
+  border: 2px solid var(--primary);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  text-align: center;
+  margin-top: var(--sp-5);
+  cursor: pointer;
+}
+.tracking-box .t-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-2);
+}
+.tracking-number {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 1px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.copy-hint { font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--sp-1) }
+
+/* ── Stat strip ─────────────────────────────────────────────────────────── */
+.stat-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: var(--sp-4);
+}
+.stat-cell {
+  text-align: center;
+  padding: var(--sp-4) var(--sp-2);
+  border-right: 1px solid var(--border);
+}
+.stat-cell:last-child { border-right: none }
+.stat-value { font-size: var(--text-lg); font-weight: 800 }
+.stat-label { font-size: 0.625rem; color: var(--text-muted); margin-top: 3px; text-transform: uppercase; letter-spacing: .5px }
+
+/* ── Detail card ────────────────────────────────────────────────────────── */
+.detail-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--sp-4);
+}
+.card-title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--border);
+}
+.detail-row {
+  display: flex;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  align-items: flex-start;
+}
+.detail-row:last-child { margin-bottom: 0 }
+.detail-icon { font-size: 15px; width: 20px; flex-shrink: 0; margin-top: 1px }
+.detail-label { font-size: var(--text-xs); color: var(--text-muted); min-width: 64px }
+.detail-value { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); flex: 1; word-break: break-word }
+
+/* ── Timeline ───────────────────────────────────────────────────────────── */
+.tl-step { display: flex; gap: var(--sp-3); padding-bottom: var(--sp-4) }
+.tl-step:last-child { padding-bottom: 0 }
+.tl-left { display: flex; flex-direction: column; align-items: center }
+.tl-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  flex-shrink: 0; z-index: 1;
+}
+.tl-dot.done    { background: var(--primary); color: #fff }
+.tl-dot.pending { background: var(--border); color: var(--text-muted) }
+.tl-line { flex: 1; width: 2px; background: var(--border); margin: 2px 0 }
+.tl-step:last-child .tl-line { display: none }
+.tl-content { padding-top: 4px }
+.tl-title { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary) }
+.tl-desc  { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+  display: block;
+  width: 100%;
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  font-size: var(--text-base);
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  margin-bottom: var(--sp-2);
+  transition: background .15s, box-shadow .15s, transform .1s;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0,53,107,.3);
+}
+.btn-primary:hover { background: var(--primary-dark); box-shadow: 0 6px 18px rgba(0,53,107,.35); transform: translateY(-1px) }
+.btn-secondary {
+  background: var(--surface);
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+}
+.btn-secondary:hover { background: var(--primary-light) }
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  padding: var(--sp-5) var(--sp-4) var(--sp-6);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.footer a { color: var(--text-secondary); font-weight: 600; text-decoration: none }
+.footer a:hover { color: var(--primary) }
 </style>
 </head>
 <body>
 
-<div style="position:fixed;top:0;left:0;right:0;z-index:200;height:3px;background:#E2E8F0">
-  <div style="height:100%;width:25%;background:linear-gradient(90deg,#00356B,#286DC0);border-radius:0 2px 2px 0"></div>
-</div>
+<div class="progress-bar"><div class="progress-fill"></div></div>
 
 <div class="header">
   <div class="seal">⚓</div>
@@ -64,33 +268,43 @@
     <h1>New Haven 311</h1>
     <p>Non-Emergency City Services</p>
   </div>
-  <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0">
-    <a href="/" class="header-home">← Home</a>
-    <a href="https://hub.mycity311.co" class="header-hub" style="margin-left:0">All Cities</a>
-  </div>
+  <a href="/" class="header-btn">← Home</a>
 </div>
 
 <div class="container">
 
   <div class="success-card">
     <div class="checkmark">✅</div>
-    <h2>Report Submitted!</h2>
-    <p>Your report is live and city staff have been notified. Use your tracking number below to follow progress.</p>
+    <h2>Report Submitted</h2>
+    <p>Your report is in the system. Use your tracking number below to follow progress as staff review and act on it.</p>
     <div class="tracking-box" onclick="copyTracking()">
-      <div class="label">Your Tracking Number</div>
+      <div class="t-label">Your Tracking Number</div>
       <div class="tracking-number" id="tracking-num">{{ sub.tracking_number }}</div>
       <div class="copy-hint">Tap to copy</div>
     </div>
   </div>
 
+  <div class="stat-strip">
+    <div class="stat-cell">
+      <div class="stat-value" style="color:var(--accent)">1–2d</div>
+      <div class="stat-label">First Review</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value" style="color:#059669">Free</div>
+      <div class="stat-label">For Residents</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value" style="color:#D97706">24/7</div>
+      <div class="stat-label">Tracked Live</div>
+    </div>
+  </div>
+
   <div class="detail-card">
-    <h3>Report Details</h3>
+    <div class="card-title">Report Details</div>
     <div class="detail-row">
       <span class="detail-icon">📋</span>
       <span class="detail-label">Category</span>
-      <span class="detail-value">
-        {% if cat %}{{ cat.icon }} {% endif %}{{ sub.category_label }}
-      </span>
+      <span class="detail-value">{% if cat %}{{ cat.icon }} {% endif %}{{ sub.category_label }}</span>
     </div>
     {% if sub.address %}
     <div class="detail-row">
@@ -111,47 +325,30 @@
       <span class="detail-label">Submitted</span>
       <span class="detail-value">{{ sub.created_at[:16] }}</span>
     </div>
-    <div class="detail-row" style="margin-bottom:0">
+    <div class="detail-row">
       <span class="detail-icon">📊</span>
       <span class="detail-label">Status</span>
-      <span class="detail-value" style="color:#286DC0;font-weight:700">{{ sub.status }}</span>
-    </div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:16px;background:#fff">
-    <div style="text-align:center;padding:14px 6px;border-right:1px solid #E2E8F0">
-      <div style="font-size:1.1rem;font-weight:800;color:#286DC0">1–2d</div>
-      <div style="font-size:.6rem;color:#718096;margin-top:2px;text-transform:uppercase;letter-spacing:.4px">First Review</div>
-    </div>
-    <div style="text-align:center;padding:14px 6px;border-right:1px solid #E2E8F0">
-      <div style="font-size:1.1rem;font-weight:800;color:#276749">Free</div>
-      <div style="font-size:.6rem;color:#718096;margin-top:2px;text-transform:uppercase;letter-spacing:.4px">For Residents</div>
-    </div>
-    <div style="text-align:center;padding:14px 6px">
-      <div style="font-size:1.1rem;font-weight:800;color:#C05621">24/7</div>
-      <div style="font-size:.6rem;color:#718096;margin-top:2px;text-transform:uppercase;letter-spacing:.4px">Tracked Live</div>
+      <span class="detail-value" style="color:var(--accent);font-weight:700">{{ sub.status }}</span>
     </div>
   </div>
 
   <div class="detail-card">
-    <h3>What Happens Next</h3>
-    <div class="timeline">
-      <div class="tl-step">
-        <div class="tl-left"><div class="tl-dot done">✓</div><div class="tl-line"></div></div>
-        <div class="tl-content"><div class="tl-title">Submitted</div><div class="tl-desc">Your report is in the system</div></div>
-      </div>
-      <div class="tl-step">
-        <div class="tl-left"><div class="tl-dot pending">2</div><div class="tl-line"></div></div>
-        <div class="tl-content"><div class="tl-title">In Review</div><div class="tl-desc">Staff reviews and categorizes your report</div></div>
-      </div>
-      <div class="tl-step">
-        <div class="tl-left"><div class="tl-dot pending">3</div><div class="tl-line"></div></div>
-        <div class="tl-content"><div class="tl-title">Assigned</div><div class="tl-desc">Routed to the right city department</div></div>
-      </div>
-      <div class="tl-step">
-        <div class="tl-left"><div class="tl-dot pending">4</div><div class="tl-line"></div></div>
-        <div class="tl-content"><div class="tl-title">Resolved</div><div class="tl-desc">Issue addressed and closed</div></div>
-      </div>
+    <div class="card-title">What Happens Next</div>
+    <div class="tl-step">
+      <div class="tl-left"><div class="tl-dot done">✓</div><div class="tl-line"></div></div>
+      <div class="tl-content"><div class="tl-title">Submitted</div><div class="tl-desc">Your report is in the system</div></div>
+    </div>
+    <div class="tl-step">
+      <div class="tl-left"><div class="tl-dot pending">2</div><div class="tl-line"></div></div>
+      <div class="tl-content"><div class="tl-title">In Review</div><div class="tl-desc">Staff reviews and categorizes your report</div></div>
+    </div>
+    <div class="tl-step">
+      <div class="tl-left"><div class="tl-dot pending">3</div><div class="tl-line"></div></div>
+      <div class="tl-content"><div class="tl-title">Assigned</div><div class="tl-desc">Routed to the right city department</div></div>
+    </div>
+    <div class="tl-step">
+      <div class="tl-left"><div class="tl-dot pending">4</div><div class="tl-line"></div></div>
+      <div class="tl-content"><div class="tl-title">Resolved</div><div class="tl-desc">Issue addressed and closed</div></div>
     </div>
   </div>
 
@@ -160,21 +357,21 @@
 
 </div>
 
+<div class="footer">
+  Powered by <a href="https://home.mycity311.co">MyCity311</a>
+  &nbsp;·&nbsp; 2 cities live &nbsp;·&nbsp; More coming soon
+</div>
+
 <script>
 function copyTracking() {
   const num = document.getElementById('tracking-num').textContent;
   navigator.clipboard.writeText(num).then(() => {
     const hint = document.querySelector('.copy-hint');
-    hint.textContent = 'Copied! ✓';
-    hint.style.color = '#286DC0';
+    hint.textContent = 'Copied!';
+    hint.style.color = '#059669';
     setTimeout(() => { hint.textContent = 'Tap to copy'; hint.style.color = ''; }, 2000);
   });
 }
 </script>
-
-<div style="text-align:center;padding:20px 16px 28px;font-size:.72rem;color:#A0AEC0;letter-spacing:.2px">
-  Powered by <a href="https://hub.mycity311.co" style="color:#718096;font-weight:700;text-decoration:none">MyCity311</a>
-  &nbsp;·&nbsp; 2 cities live &nbsp;·&nbsp; More coming soon
-</div>
 </body>
 </html>

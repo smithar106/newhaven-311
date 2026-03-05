@@ -6,111 +6,496 @@
 <title>New Haven 311</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;color:#1A202C;min-height:100vh}
+/* ── Design Tokens ──────────────────────────────────────────────────────── */
+:root {
+  --primary:        #00356B;
+  --primary-dark:   #002a54;
+  --primary-light:  #EBF3FF;
+  --accent:         #3B82F6;
+  --success:        #10B981;
+  --text-primary:   #111827;
+  --text-secondary: #4B5563;
+  --text-muted:     #9CA3AF;
+  --border:         #E5E7EB;
+  --border-focus:   #00356B;
+  --surface:        #FFFFFF;
+  --bg:             #F3F4F8;
 
-  /* ── header ── */
-  .header{background:#00356B;color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.35)}
-  .seal{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-  .header-text h1{font-size:1.25rem;font-weight:700;letter-spacing:.3px}
-  .header-text p{font-size:.72rem;opacity:.8;margin-top:1px}
-  .header-hub{margin-left:auto;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 13px;font-size:.78rem;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0}
+  /* Type scale — 6 steps only */
+  --text-xs:   0.75rem;   /* 12px */
+  --text-sm:   0.8125rem; /* 13px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-lg:   1.0625rem; /* 17px */
+  --text-xl:   1.25rem;   /* 20px */
+  --text-2xl:  1.5rem;    /* 24px */
 
-  /* ── city hero banner ── */
-  .city-hero{
-    height:160px;
-    background:
-      linear-gradient(rgba(0,53,107,.55), rgba(0,53,107,.78)),
-      url('https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&q=80') center/cover no-repeat;
-    display:flex;flex-direction:column;justify-content:flex-end;padding:16px;
-    position:relative;overflow:hidden;
-  }
-  .city-hero-alt{
-    background:
-      linear-gradient(rgba(0,53,107,.55), rgba(0,53,107,.78)),
-      url('https://images.unsplash.com/photo-1562516155-e0c1ee44059b?w=800&q=80') center/cover no-repeat;
-  }
-  .hero-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7);margin-bottom:4px}
-  .hero-title{font-size:1.35rem;font-weight:800;color:#fff;line-height:1.2}
-  .hero-sub{font-size:.78rem;color:rgba(255,255,255,.8);margin-top:4px}
-  .hero-tabs{display:flex;gap:8px;margin-top:12px}
-  .hero-tab{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:20px;padding:5px 14px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none}
-  .hero-tab.active{background:#fff;color:#00356B}
+  /* Spacing — 4px grid */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
 
-  /* ── nav tabs ── */
-  .tabs{display:flex;background:#002a54;border-bottom:1px solid rgba(255,255,255,.12)}
-  .tab{flex:1;padding:10px 4px;text-align:center;color:rgba(255,255,255,.6);font-size:.78rem;font-weight:500;cursor:pointer;border:none;background:none;transition:all .2s}
-  .tab.active{color:#fff;border-bottom:2px solid #63AAFF;font-weight:700}
+  /* Radii */
+  --r-sm:   6px;
+  --r-md:   10px;
+  --r-lg:   14px;
+  --r-full: 9999px;
 
-  /* ── views ── */
-  .view{display:none;padding:16px;max-width:520px;margin:0 auto}
-  .view.active{display:block}
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.10), 0 3px 8px rgba(0,0,0,.05);
+}
 
-  /* ── category grid ── */
-  .section-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#718096;margin-bottom:12px}
-  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .cat-card{background:#fff;border-radius:12px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;border:2px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:all .18s;-webkit-tap-highlight-color:transparent}
-  .cat-card:active{transform:scale(.96)}
-  .cat-card.selected{border-color:#00356B;background:#EBF0FF}
-  .cat-icon{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px}
-  .cat-label{font-size:.74rem;font-weight:600;text-align:center;color:#2D3748;line-height:1.3}
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
 
-  /* ── selected badge ── */
-  .selected-badge{background:#00356B;color:#fff;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
-  .selected-badge .badge-icon{font-size:22px}
-  .selected-badge .badge-label{flex:1;font-size:.95rem;font-weight:600}
-  .change-btn{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:.75rem;padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:600}
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  background: var(--primary);
+  color: #fff;
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+.seal {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  border: 1.5px solid rgba(255,255,255,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.header-text h1 {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -.2px;
+  line-height: 1.2;
+}
+.header-text p {
+  font-size: var(--text-xs);
+  opacity: .72;
+  margin-top: 1px;
+  letter-spacing: .1px;
+}
 
-  /* ── form sections ── */
-  .form-section{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
-  .form-section h3{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#718096;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+/* ── Trust strip ────────────────────────────────────────────────────────── */
+.trust-strip {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  overflow-x: auto;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.trust-strip::-webkit-scrollbar { display: none }
+.trust-pill {
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-full);
+  padding: 5px var(--sp-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  letter-spacing: .1px;
+}
 
-  label{display:block;font-size:.82rem;font-weight:600;color:#2D3748;margin-bottom:5px}
-  input[type=text],input[type=email],input[type=tel],textarea{width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:11px 12px;font-size:.9rem;color:#1A202C;background:#FAFAFA;outline:none;transition:border-color .2s;font-family:inherit}
-  input:focus,textarea:focus{border-color:#00356B;background:#fff}
-  textarea{resize:vertical;min-height:80px}
+/* ── Nav tabs ───────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  background: var(--primary-dark);
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.tab {
+  flex: 1;
+  padding: var(--sp-3) var(--sp-1);
+  text-align: center;
+  color: rgba(255,255,255,.55);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: color .15s;
+  letter-spacing: .1px;
+}
+.tab.active {
+  color: #fff;
+  font-weight: 700;
+  border-bottom: 2px solid #60A5FA;
+}
+.tab:hover:not(.active) { color: rgba(255,255,255,.8) }
 
-  .gps-row{display:flex;gap:8px;margin-bottom:10px}
-  .gps-btn{background:#00356B;color:#fff;border:none;border-radius:8px;padding:11px 16px;font-size:.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
-  .gps-status{font-size:.75rem;color:#718096;margin-bottom:8px;min-height:18px}
-  #map{height:180px;border-radius:8px;border:1.5px solid #E2E8F0;margin-top:8px}
+/* ── Views ──────────────────────────────────────────────────────────────── */
+.view { display: none; padding: var(--sp-4); max-width: 520px; margin: 0 auto }
+.view.active { display: block }
 
-  .photo-row{display:flex;gap:8px}
-  .photo-slot{flex:1;aspect-ratio:1;border:2px dashed #CBD5E0;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;background:#FAFAFA;transition:border-color .2s}
-  .photo-slot:hover{border-color:#00356B}
-  .photo-slot img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:8px}
-  .photo-slot .plus{font-size:24px;color:#A0AEC0}
-  .photo-slot .remove-photo{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2}
-  .photo-slot.has-img .remove-photo{display:flex}
-  input[type=file]{display:none}
+/* ── Section label ──────────────────────────────────────────────────────── */
+.section-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-3);
+}
 
-  .field-row{margin-bottom:10px}
+/* ── Category grid ──────────────────────────────────────────────────────── */
+.cat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+.cat-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4) var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: border-color .15s, box-shadow .15s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.cat-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+.cat-card:active { transform: scale(.97) }
+.cat-card.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.cat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.cat-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
 
-  .submit-btn{width:100%;background:#00356B;color:#fff;border:none;border-radius:12px;padding:16px;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:4px;letter-spacing:.3px;transition:background .2s}
-  .submit-btn:active{background:#002a54}
-  .submit-btn:disabled{background:#A0AEC0;cursor:default}
+/* ── Selected badge ─────────────────────────────────────────────────────── */
+.selected-badge {
+  background: var(--primary);
+  color: #fff;
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  box-shadow: var(--shadow-md);
+}
+.selected-badge .badge-icon { font-size: 20px; flex-shrink: 0 }
+.selected-badge .badge-label { flex: 1; font-size: var(--text-base); font-weight: 600 }
+.change-btn {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  color: #fff;
+  font-size: var(--text-xs);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.change-btn:hover { background: rgba(255,255,255,.25) }
 
-  /* ── waterfront info strip ── */
-  .info-strip{
-    background:
-      linear-gradient(rgba(6,86,102,.88), rgba(6,86,102,.95)),
-      url('https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80') center/cover no-repeat;
-    color:#fff;padding:16px;margin:0 -16px;display:flex;gap:16px;overflow-x:auto;
-  }
-  .info-chip{flex-shrink:0;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:10px 14px;text-align:center;min-width:100px}
-  .info-chip .ic-val{font-size:1.1rem;font-weight:800}
-  .info-chip .ic-lbl{font-size:.65rem;opacity:.8;margin-top:2px}
+/* ── Form card ──────────────────────────────────────────────────────────── */
+.form-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.form-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--border);
+}
+.form-card-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.form-card-icon svg { width: 15px; height: 15px; stroke: var(--primary) }
+.form-card-title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: .1px;
+}
+.form-card-optional {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 500;
+}
 
-  /* ── track view ── */
-  .track-search{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
-  .search-row{display:flex;gap:8px}
-  .search-row input{flex:1;border:1.5px solid #E2E8F0;border-radius:8px;padding:11px 12px;font-size:.9rem;text-transform:uppercase;font-family:inherit;outline:none}
-  .search-row input:focus{border-color:#00356B}
-  .search-btn{background:#00356B;color:#fff;border:none;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer;font-size:.9rem}
+/* ── Form inputs ────────────────────────────────────────────────────────── */
+.field { margin-bottom: var(--sp-3) }
+.field:last-child { margin-bottom: 0 }
+.field label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-1);
+}
+input[type=text],
+input[type=email],
+input[type=tel],
+textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px var(--sp-3);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  background: var(--bg);
+  outline: none;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  font-family: inherit;
+  -webkit-appearance: none;
+}
+input:focus, textarea:focus {
+  border-color: var(--border-focus);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(0,53,107,.1);
+}
+textarea { resize: vertical; min-height: 84px; line-height: 1.5 }
 
-  /* ── toast ── */
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A202C;color:#fff;padding:10px 20px;border-radius:20px;font-size:.85rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
-  .toast.show{opacity:1}
+/* ── GPS ────────────────────────────────────────────────────────────────── */
+.gps-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2) }
+.gps-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 10px var(--sp-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  white-space: nowrap;
+  transition: background .15s, box-shadow .15s;
+  flex-shrink: 0;
+}
+.gps-btn:hover { background: var(--primary-dark); box-shadow: var(--shadow-md) }
+.gps-btn svg { width: 15px; height: 15px; stroke: #fff; flex-shrink: 0 }
+.gps-status {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  min-height: 16px;
+  line-height: 1.4;
+}
+.gps-status.success { color: var(--success) }
+#map {
+  height: 178px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  margin-top: var(--sp-2);
+  overflow: hidden;
+}
+
+/* ── Photo upload ───────────────────────────────────────────────────────── */
+.photo-row { display: flex; gap: var(--sp-2) }
+.photo-slot {
+  flex: 1;
+  aspect-ratio: 1;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--r-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg);
+  transition: border-color .15s, background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.photo-slot:hover { border-color: var(--primary); background: var(--primary-light) }
+.photo-slot:hover svg { stroke: var(--primary) }
+.photo-slot svg { width: 22px; height: 22px; stroke: var(--text-muted); transition: stroke .15s }
+.photo-slot .slot-label { font-size: var(--text-xs); color: var(--text-muted); font-weight: 500 }
+.photo-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.photo-slot .remove-photo {
+  position: absolute;
+  top: var(--sp-1);
+  right: var(--sp-1);
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+}
+.photo-slot.has-img .remove-photo { display: flex }
+.photo-slot.has-img svg,
+.photo-slot.has-img .slot-label { display: none }
+input[type=file] { display: none }
+
+/* ── Submit button ──────────────────────────────────────────────────────── */
+.submit-btn {
+  width: 100%;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: var(--sp-1);
+  letter-spacing: -.1px;
+  transition: background .15s, box-shadow .15s, transform .1s;
+  box-shadow: 0 4px 14px rgba(0,53,107,.35);
+}
+.submit-btn:hover {
+  background: var(--primary-dark);
+  box-shadow: 0 6px 20px rgba(0,53,107,.4);
+  transform: translateY(-1px);
+}
+.submit-btn:active { transform: translateY(0); box-shadow: none }
+.submit-btn:disabled {
+  background: var(--text-muted);
+  box-shadow: none;
+  cursor: default;
+  transform: none;
+}
+
+/* ── Track view ─────────────────────────────────────────────────────────── */
+.track-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--sp-4);
+}
+.search-row { display: flex; gap: var(--sp-2) }
+.search-row input { flex: 1; text-transform: uppercase }
+.search-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 10px var(--sp-5);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: var(--text-base);
+  transition: background .15s, box-shadow .15s;
+  white-space: nowrap;
+}
+.search-btn:hover { background: var(--primary-dark); box-shadow: var(--shadow-md) }
+
+/* ── Track hero ─────────────────────────────────────────────────────────── */
+.track-hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  border-radius: var(--r-lg);
+  padding: var(--sp-5) var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.track-hero h2 { font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--sp-1) }
+.track-hero p { font-size: var(--text-sm); opacity: .75 }
+
+/* ── Toast ──────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: var(--sp-6);
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: #111827;
+  color: #fff;
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--r-full);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  pointer-events: none;
+  z-index: 999;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0) }
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  padding: var(--sp-5) var(--sp-4) var(--sp-6);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: .2px;
+}
+.footer a { color: var(--text-secondary); font-weight: 600; text-decoration: none }
+.footer a:hover { color: var(--primary) }
 </style>
 </head>
 <body>
@@ -122,44 +507,39 @@
     <h1>New Haven 311</h1>
     <p>Non-Emergency City Services</p>
   </div>
-  <a href="https://hub.mycity311.co" class="header-hub">All Cities</a>
+</div>
+
+<!-- Trust strip -->
+<div class="trust-strip">
+  <div class="trust-pill">Free for residents</div>
+  <div class="trust-pill">No account needed</div>
+  <div class="trust-pill">GPS-powered</div>
+  <div class="trust-pill">Mobile-first</div>
+  <div class="trust-pill">Tracked 24/7</div>
 </div>
 
 <!-- Nav tabs -->
 <div class="tabs">
-  <button class="tab active" onclick="showView('report',this)">📋 Report</button>
-  <button class="tab" onclick="showView('track-view',this)">🔍 Track</button>
+  <button class="tab active" onclick="showView('report',this)">Report an Issue</button>
+  <button class="tab" onclick="showView('track-view',this)">Track a Report</button>
 </div>
-
-<div style="display:flex;gap:8px;padding:14px 16px;overflow-x:auto;background:#fff;border-bottom:1px solid #E2E8F0;-webkit-overflow-scrolling:touch">
-  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">✅ Free for residents</div>
-  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">🔒 No account needed</div>
-  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">📍 GPS-powered</div>
-  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">📱 Mobile-first</div>
-  <div style="flex-shrink:0;background:#F0F2F7;border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;color:#2D3748;white-space:nowrap">🏙️ 2 cities live</div>
-</div>
-
 
 <!-- ══ REPORT VIEW ══ -->
 <div id="report" class="view active">
 
   <!-- Step 1: category -->
   <div id="step-cat">
-
-
-    <p class="section-title">What do you need to report?</p>
+    <p class="section-label" style="margin-top:4px">What do you need to report?</p>
     <div class="cat-grid">
       {% for c in categories %}
       <div class="cat-card" onclick="selectCategory('{{c.id}}','{{c.label}}','{{c.icon}}','{{c.color}}')" data-id="{{c.id}}">
-        <div class="cat-icon" style="background:{{c.color}}22">
+        <div class="cat-icon" style="background:{{c.color}}1A">
           <span>{{c.icon}}</span>
         </div>
         <div class="cat-label">{{c.label}}</div>
       </div>
       {% endfor %}
     </div>
-
-
   </div>
 
   <!-- Step 2: form -->
@@ -175,11 +555,24 @@
       <input type="hidden" name="lat" id="lat-input">
       <input type="hidden" name="lng" id="lng-input">
 
-      <div class="form-section">
-        <h3><span>📍</span> Location</h3>
+      <!-- Location -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <span class="form-card-title">Location</span>
+        </div>
         <div class="gps-row">
           <button type="button" class="gps-btn" onclick="getGPS()">
-            <span>📡</span> Use My Location
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+            </svg>
+            Use My Location
           </button>
           <input type="text" name="address" id="address-input" placeholder="Or enter address" style="flex:1">
         </div>
@@ -187,12 +580,26 @@
         <div id="map"></div>
       </div>
 
-      <div class="form-section">
-        <h3><span>📷</span> Photos <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#A0AEC0">(optional, up to 3)</span></h3>
+      <!-- Photos -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <span class="form-card-title">Photos</span>
+          <span class="form-card-optional">Optional — up to 3</span>
+        </div>
         <div class="photo-row">
           {% for i in range(3) %}
           <div class="photo-slot" id="slot-{{i}}" onclick="triggerPhoto({{i}})">
-            <span class="plus">+</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <span class="slot-label">Add photo</span>
             <button type="button" class="remove-photo" onclick="removePhoto(event,{{i}})">✕</button>
           </div>
           <input type="file" name="photo_{{i}}" id="photo-{{i}}" accept="image/*" capture="environment" onchange="previewPhoto({{i}})">
@@ -200,22 +607,45 @@
         </div>
       </div>
 
-      <div class="form-section">
-        <h3><span>📝</span> Description</h3>
-        <textarea name="description" placeholder="Describe the issue in detail…" rows="3"></textarea>
+      <!-- Description -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <span class="form-card-title">Description</span>
+        </div>
+        <textarea name="description" placeholder="Describe the issue — the more detail, the faster we can respond…" rows="3"></textarea>
       </div>
 
-      <div class="form-section">
-        <h3><span>👤</span> Contact Info <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#A0AEC0">(optional)</span></h3>
-        <div class="field-row">
+      <!-- Contact -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <span class="form-card-title">Contact Info</span>
+          <span class="form-card-optional">Optional</span>
+        </div>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--sp-3);line-height:1.5">Helps us follow up with updates on your report.</p>
+        <div class="field">
           <label>Name</label>
           <input type="text" name="contact_name" placeholder="Your name">
         </div>
-        <div class="field-row">
+        <div class="field">
           <label>Email</label>
           <input type="email" name="contact_email" placeholder="your@email.com">
         </div>
-        <div class="field-row" style="margin-bottom:0">
+        <div class="field">
           <label>Phone</label>
           <input type="tel" name="contact_phone" placeholder="(203) 555-0100">
         </div>
@@ -223,22 +653,18 @@
 
       <button type="submit" class="submit-btn" id="submit-btn">Submit Report</button>
     </form>
-    <div style="height:24px"></div>
+    <div style="height:var(--sp-6)"></div>
   </div>
 </div>
 
 <!-- ══ TRACK VIEW ══ -->
 <div id="track-view" class="view">
-
-  <!-- Waterfront hero in track view -->
-  <div class="city-hero city-hero-alt" style="margin:0 -16px 16px">
-    <div class="hero-label">New Haven 311</div>
-    <div class="hero-title">Track Your Report</div>
-    <div class="hero-sub">Enter your tracking number below.</div>
+  <div class="track-hero">
+    <h2>Track Your Report</h2>
+    <p>Enter your tracking number to see the latest status.</p>
   </div>
-
-  <div class="track-search">
-    <p class="section-title" style="margin-bottom:10px">Tracking number</p>
+  <div class="track-card">
+    <p class="section-label" style="margin-bottom:var(--sp-3)">Tracking number</p>
     <div class="search-row">
       <input type="text" id="track-input" placeholder="NHV-2026-XXXXXXXX" maxlength="18">
       <button class="search-btn" onclick="trackReport()">Search</button>
@@ -249,8 +675,8 @@
 
 <div class="toast" id="toast"></div>
 
-<div style="text-align:center;padding:20px 16px 28px;font-size:.72rem;color:#A0AEC0;letter-spacing:.2px">
-  Powered by <a href="https://hub.mycity311.co" style="color:#718096;font-weight:700;text-decoration:none">MyCity311</a>
+<div class="footer">
+  Powered by <a href="https://home.mycity311.co">MyCity311</a>
   &nbsp;·&nbsp; 2 cities live &nbsp;·&nbsp; More coming soon
 </div>
 
@@ -281,7 +707,6 @@ function backToCategories() {
 }
 
 function initMap() {
-  // Center on New Haven, CT
   map = L.map('map', { zoomControl: true }).setView([41.3083, -72.9279], 13);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap © CARTO', maxZoom: 19
@@ -295,7 +720,7 @@ function initMap() {
 function placeMarker(lat, lng) {
   if (marker) map.removeLayer(marker);
   marker = L.circleMarker([lat, lng], {
-    radius:10, color:'#00356B', fillColor:'#00356B', fillOpacity:.85, weight:2
+    radius: 10, color: '#00356B', fillColor: '#00356B', fillOpacity: .85, weight: 2
   }).addTo(map);
   document.getElementById('lat-input').value = lat;
   document.getElementById('lng-input').value = lng;
@@ -304,13 +729,17 @@ function placeMarker(lat, lng) {
 
 function getGPS() {
   const status = document.getElementById('gps-status');
-  status.textContent = 'Locating...';
-  if (!navigator.geolocation) { status.textContent = 'GPS not supported'; return; }
+  status.textContent = 'Locating…';
+  status.className = 'gps-status';
+  if (!navigator.geolocation) { status.textContent = 'GPS not supported on this device'; return; }
   navigator.geolocation.getCurrentPosition(pos => {
     placeMarker(pos.coords.latitude, pos.coords.longitude);
     reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-    status.textContent = 'Location found ✓';
-  }, () => { status.textContent = 'Could not get location. Enter address manually.'; });
+    status.textContent = 'Location found';
+    status.className = 'gps-status success';
+  }, () => {
+    status.textContent = 'Could not get location — enter address manually.';
+  });
 }
 
 function reverseGeocode(lat, lng) {
@@ -332,7 +761,6 @@ function previewPhoto(i) {
     if (!img) { img = document.createElement('img'); slot.appendChild(img); }
     img.src = e.target.result;
     slot.classList.add('has-img');
-    slot.querySelector('.plus').style.display = 'none';
   };
   reader.readAsDataURL(file);
 }
@@ -343,7 +771,6 @@ function removePhoto(evt, i) {
   const img  = slot.querySelector('img');
   if (img) img.remove();
   slot.classList.remove('has-img');
-  slot.querySelector('.plus').style.display = '';
   document.getElementById(`photo-${i}`).value = '';
 }
 
@@ -357,10 +784,11 @@ document.getElementById('track-input').addEventListener('keydown', e => {
 
 document.getElementById('report-form').addEventListener('submit', function(e) {
   if (!document.getElementById('cat-input').value) {
-    e.preventDefault(); showToast('Please select a category'); return;
+    e.preventDefault(); showToast('Please select a category first'); return;
   }
-  document.getElementById('submit-btn').disabled = true;
-  document.getElementById('submit-btn').textContent = 'Submitting...';
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
 });
 
 function showToast(msg) {
