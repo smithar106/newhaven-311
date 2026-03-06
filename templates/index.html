@@ -132,9 +132,9 @@ body {
   flex: 1;
   padding: var(--sp-3) var(--sp-1);
   text-align: center;
-  color: rgba(255,255,255,.55);
-  font-size: var(--text-sm);
-  font-weight: 500;
+  color: rgba(255,255,255,.72);
+  font-size: var(--text-base);
+  font-weight: 600;
   cursor: pointer;
   border: none;
   background: none;
@@ -166,19 +166,19 @@ body {
 .cat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
 }
 .cat-card {
   background: var(--surface);
   border-radius: var(--r-lg);
-  padding: var(--sp-4) var(--sp-3);
+  padding: var(--sp-5) var(--sp-3);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
   cursor: pointer;
-  border: 1.5px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,.09), 0 1px 3px rgba(0,0,0,.06);
   transition: border-color .15s, box-shadow .15s, transform .12s;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -193,17 +193,17 @@ body {
   background: var(--primary-light);
 }
 .cat-icon {
-  width: 52px;
-  height: 52px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 30px;
 }
 .cat-label {
-  font-size: var(--text-sm);
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: 700;
   text-align: center;
   color: var(--text-primary);
   line-height: 1.3;
@@ -266,7 +266,7 @@ body {
 }
 .form-card-icon svg { width: 15px; height: 15px; stroke: var(--primary) }
 .form-card-title {
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: .1px;
@@ -284,8 +284,8 @@ body {
 .field label {
   display: block;
   font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-weight: 700;
+  color: var(--text-primary);
   margin-bottom: var(--sp-1);
 }
 input[type=text],
@@ -295,7 +295,7 @@ textarea {
   width: 100%;
   border: 1.5px solid var(--border);
   border-radius: var(--r-md);
-  padding: 10px var(--sp-3);
+  padding: 13px var(--sp-3);
   font-size: var(--text-base);
   color: var(--text-primary);
   background: var(--bg);
@@ -529,11 +529,11 @@ input[type=file] { display: none }
 
   <!-- Step 1: category -->
   <div id="step-cat">
-    <p class="section-label" style="margin-top:4px">What do you need to report?</p>
+    <p style="margin-top:var(--sp-3);margin-bottom:var(--sp-4);font-size:var(--text-lg);font-weight:800;color:var(--text-primary);letter-spacing:-.2px">What do you need to report?</p>
     <div class="cat-grid">
       {% for c in categories %}
       <div class="cat-card" onclick="selectCategory('{{c.id}}','{{c.label}}','{{c.icon}}','{{c.color}}')" data-id="{{c.id}}">
-        <div class="cat-icon" style="background:{{c.color}}1A">
+        <div class="cat-icon" style="background:{{c.color}}33">
           <span>{{c.icon}}</span>
         </div>
         <div class="cat-label">{{c.label}}</div>
