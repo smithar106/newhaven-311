@@ -373,5 +373,23 @@ function copyTracking() {
   });
 }
 </script>
+<script>
+(function() {
+  try {
+    const report = {
+      tracking: {{ sub.tracking_number | tojson }},
+      category: {{ sub.category_label | tojson }},
+      icon:     {{ (cat.icon if cat else '') | tojson }},
+      address:  {{ (sub.address or '') | tojson }},
+      date:     {{ sub.created_at[:10] | tojson }}
+    };
+    const saved = JSON.parse(localStorage.getItem('nh311_reports') || '[]');
+    if (!saved.find(r => r.tracking === report.tracking)) {
+      saved.unshift(report);
+    }
+    localStorage.setItem('nh311_reports', JSON.stringify(saved.slice(0, 20)));
+  } catch(e) {}
+})();
+</script>
 </body>
 </html>

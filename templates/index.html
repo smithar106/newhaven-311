@@ -435,6 +435,42 @@ input[type=file] { display: none }
   transform: none;
 }
 
+/* ── Saved reports list ─────────────────────────────────────────────────── */
+.saved-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  text-decoration: none;
+  color: var(--text-primary);
+  margin-bottom: var(--sp-2);
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.saved-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md) }
+.saved-icon {
+  font-size: 26px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.saved-body { flex: 1; min-width: 0 }
+.saved-cat  { font-size: var(--text-sm); font-weight: 700; color: var(--text-primary) }
+.saved-addr { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.saved-meta { flex-shrink: 0; text-align: right }
+.saved-date { font-size: var(--text-xs); color: var(--text-muted) }
+.saved-arrow { font-size: 1.1rem; color: var(--primary); font-weight: 700; margin-top: 2px }
+.saved-empty { text-align: center; padding: var(--sp-5) var(--sp-4); color: var(--text-muted); font-size: var(--text-sm) }
+
 /* ── Track view ─────────────────────────────────────────────────────────── */
 .track-card {
   background: var(--surface);
@@ -666,11 +702,14 @@ input[type=file] { display: none }
 <!-- ══ TRACK VIEW ══ -->
 <div id="track-view" class="view">
   <div class="track-hero">
-    <h2>Track Your Report</h2>
-    <p>Enter your tracking number to see the latest status.</p>
+    <h2>Track Your Requests</h2>
+    <p>Reports submitted from this device appear below.</p>
   </div>
+
+  <div id="saved-reports"></div>
+
   <div class="track-card">
-    <p class="section-label" style="margin-bottom:var(--sp-3)">Tracking number</p>
+    <p class="section-label" style="margin-bottom:var(--sp-3)">Look up by tracking number</p>
     <div class="search-row">
       <input type="text" id="track-input" placeholder="NHV-2026-XXXXXXXX" maxlength="18">
       <button class="search-btn" onclick="trackReport()">Search</button>
@@ -703,6 +742,28 @@ function showView(id, btn) {
   document.getElementById(id).classList.add('active');
   btn.classList.add('active');
   if (id === 'report' && !map) initMap();
+  if (id === 'track-view') loadSavedReports();
+}
+
+function loadSavedReports() {
+  const saved = JSON.parse(localStorage.getItem('nh311_reports') || '[]');
+  const el = document.getElementById('saved-reports');
+  if (!saved.length) {
+    el.innerHTML = '<p class="saved-empty">No reports yet — submit one and it will appear here.</p>';
+    return;
+  }
+  el.innerHTML = saved.map(r => `
+    <a href="/track?tracking=${encodeURIComponent(r.tracking)}" class="saved-card">
+      <div class="saved-icon">${r.icon || '📋'}</div>
+      <div class="saved-body">
+        <div class="saved-cat">${r.category}</div>
+        <div class="saved-addr">${r.address || 'Location not specified'}</div>
+      </div>
+      <div class="saved-meta">
+        <div class="saved-date">${r.date}</div>
+        <div class="saved-arrow">›</div>
+      </div>
+    </a>`).join('');
 }
 
 function selectCategory(id, label, icon, color) {
