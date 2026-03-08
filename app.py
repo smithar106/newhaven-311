@@ -59,15 +59,15 @@ class DBConn:
 CATEGORIES = [
     {'id': 'pothole',           'label': 'Pothole / Road Damage',   'icon': '🕳️',  'color': '#C53030'},
     {'id': 'streetlight',       'label': 'Streetlight Outage',      'icon': '💡',  'color': '#B7791F'},
-    {'id': 'graffiti',          'label': 'Graffiti',                'icon': '🎨',  'color': '#6B46C1'},
+    {'id': 'graffiti',          'label': 'Graffiti / Vandalism',    'icon': '🎨',  'color': '#6B46C1'},
     {'id': 'abandoned_vehicle', 'label': 'Abandoned Vehicle',       'icon': '🚗',  'color': '#C05621'},
     {'id': 'illegal_dumping',   'label': 'Illegal Dumping',         'icon': '🗑️',  'color': '#744210'},
     {'id': 'missed_pickup',     'label': 'Missed Garbage Pickup',   'icon': '♻️',  'color': '#276749'},
     {'id': 'park_damage',       'label': 'Park / Tree Damage',      'icon': '🌳',  'color': '#22543D'},
     {'id': 'noise',             'label': 'Noise Complaint',         'icon': '🔊',  'color': '#2C5282'},
-    {'id': 'code_violation',    'label': 'Code Violation',          'icon': '🏠',  'color': '#9B2335'},
+    {'id': 'sidewalk',          'label': 'Sidewalk / Curb Damage',  'icon': '🚶',  'color': '#9B2335'},
     {'id': 'water_sewer',       'label': 'Water / Sewer Issue',     'icon': '💧',  'color': '#2B6CB0'},
-    {'id': 'traffic_signal',    'label': 'Traffic Signal Issue',    'icon': '🚦',  'color': '#2D3748'},
+    {'id': 'public_safety',     'label': 'Public Safety Concern',   'icon': '🚨',  'color': '#2D3748'},
     {'id': 'other',             'label': 'Other',                   'icon': '📋',  'color': '#4A5568'},
 ]
 
