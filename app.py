@@ -18,6 +18,11 @@ SMTP_USER  = os.environ.get('SMTP_USER', '')
 SMTP_PASS  = os.environ.get('SMTP_PASS', '')
 MAIL_FROM  = os.environ.get('MAIL_FROM', SMTP_USER)
 
+# ── web push config (optional — set env vars to enable) ───────────────────
+VAPID_PRIVATE = os.environ.get('VAPID_PRIVATE', '')
+VAPID_PUBLIC  = os.environ.get('VAPID_PUBLIC',  'BNAgUmjN9HpuBIZJfzNx8aGFqC-H1H5XikctLo14zbXeoDvtfNgo3XxKNBuZ6CKoJJsQkZDUDIIbdfO-yE68tKc')
+VAPID_SUBJECT = os.environ.get('VAPID_SUBJECT', 'mailto:notifications@mycity311.co')
+
 ADMIN_USER = os.environ.get('ADMIN_USER', 'admin')
 ADMIN_PASS = os.environ.get('ADMIN_PASS', 'newhaven2026')
 
@@ -132,6 +137,14 @@ def init_db():
         db.commit()
     except Exception:
         pass  # column already exists
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            tracking_number TEXT NOT NULL,
+            subscription    TEXT NOT NULL,
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     db.commit()
     db.close()
 
@@ -540,6 +553,37 @@ def send_confirmation_email(to_email, tracking, category_label, address, city):
         pass  # never break submission flow due to email failure
 
 
+def send_push_notification(tracking_number, title, body, url):
+    """Send a Web Push notification to all subscribed devices for a tracking number."""
+    if not VAPID_PRIVATE:
+        return
+    try:
+        from pywebpush import webpush, WebPushException
+        db   = get_db()
+        subs = db.execute(
+            'SELECT id, subscription FROM push_subscriptions WHERE tracking_number=?',
+            (tracking_number,)
+        ).fetchall()
+        dead = []
+        for row in subs:
+            try:
+                webpush(
+                    subscription_info=json.loads(row['subscription']),
+                    data=json.dumps({'title': title, 'body': body, 'url': url}),
+                    vapid_private_key=VAPID_PRIVATE,
+                    vapid_claims={'sub': VAPID_SUBJECT},
+                )
+            except WebPushException as ex:
+                if ex.response and ex.response.status_code in (404, 410):
+                    dead.append(row['id'])
+        for sid in dead:
+            db.execute('DELETE FROM push_subscriptions WHERE id=?', (sid,))
+        if dead:
+            db.commit()
+    except Exception:
+        pass
+
+
 def send_status_update_email(to_email, tracking, category_label, address, new_status, notes, city):
     """Email the resident whenever their ticket status changes."""
     if not SMTP_USER or not SMTP_PASS or not to_email:
@@ -718,6 +762,27 @@ def submit():
     return redirect(url_for('confirm', tracking=tracking))
 
 
+@app.route('/subscribe-push', methods=['POST'])
+def subscribe_push():
+    data     = request.get_json(silent=True) or {}
+    tracking = data.get('tracking', '').strip()
+    sub      = data.get('subscription')
+    if tracking and sub:
+        db = get_db()
+        sub_json = json.dumps(sub)
+        exists = db.execute(
+            'SELECT id FROM push_subscriptions WHERE tracking_number=? AND subscription=?',
+            (tracking, sub_json)
+        ).fetchone()
+        if not exists:
+            db.execute(
+                'INSERT INTO push_subscriptions (tracking_number, subscription) VALUES (?,?)',
+                (tracking, sub_json)
+            )
+            db.commit()
+    return '', 204
+
+
 @app.route('/confirm/<tracking>')
 def confirm(tracking):
     db  = get_db()
@@ -729,7 +794,7 @@ def confirm(tracking):
     sub['photos'] = json.loads(sub.get('photos', '[]'))
     cat_obj = next((c for c in CATEGORIES if c['id'] == sub['category']), None)
     return render_template('confirm.html', sub=sub, cat=cat_obj,
-                           city=CITY_NAME)
+                           city=CITY_NAME, vapid_public=VAPID_PUBLIC)
 
 
 @app.route('/track')
@@ -892,15 +957,22 @@ def admin_update(sub_id):
     """, (new_status, new_notes, request.form.get('priority', 'Medium'), sub_id))
     db.commit()
 
-    if old_row and new_status != old_row['status'] and old_row['contact_email']:
-        send_status_update_email(
-            old_row['contact_email'],
+    if old_row and new_status != old_row['status']:
+        if old_row['contact_email']:
+            send_status_update_email(
+                old_row['contact_email'],
+                old_row['tracking_number'],
+                old_row['category_label'],
+                old_row['address'] or '',
+                new_status,
+                new_notes,
+                CITY_NAME,
+            )
+        send_push_notification(
             old_row['tracking_number'],
-            old_row['category_label'],
-            old_row['address'] or '',
-            new_status,
-            new_notes,
-            CITY_NAME,
+            f"{CITY_NAME} 311 — Report Update",
+            f"Your {old_row['category_label']} report is now: {new_status}",
+            f"/track?tracking={old_row['tracking_number']}",
         )
 
     return redirect(url_for('admin_ticket', sub_id=sub_id))

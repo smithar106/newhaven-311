@@ -40,3 +40,20 @@ self.addEventListener('fetch', e => {
     })
   );
 });
+
+self.addEventListener('push', e => {
+  const d = e.data ? e.data.json() : {};
+  e.waitUntil(
+    self.registration.showNotification(d.title || 'New Haven 311 Update', {
+      body:  d.body  || 'Your report status has changed.',
+      icon:  '/static/icons/icon-192.png',
+      badge: '/static/icons/icon-192.png',
+      data:  { url: d.url || '/track' }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.openWindow(e.notification.data.url));
+});

@@ -282,6 +282,15 @@ body {
       <div class="tracking-number" id="tracking-num">{{ sub.tracking_number }}</div>
       <div class="copy-hint">Tap to copy</div>
     </div>
+    <button id="notify-btn" onclick="subscribePush()" style="
+      margin-top:var(--sp-4);width:100%;padding:var(--sp-3) var(--sp-4);
+      border-radius:var(--r-md);border:1.5px solid var(--primary);
+      background:var(--primary-light);color:var(--primary);
+      font-size:var(--text-sm);font-weight:700;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:var(--sp-2)">
+      🔔 Notify me when status changes
+    </button>
+    <div id="notify-msg" style="font-size:var(--text-xs);color:var(--text-muted);text-align:center;margin-top:var(--sp-2);min-height:16px"></div>
   </div>
 
   <div class="stat-strip">
@@ -390,6 +399,50 @@ function copyTracking() {
     localStorage.setItem('nh311_reports', JSON.stringify(saved.slice(0, 20)));
   } catch(e) {}
 })();
+</script>
+<script>
+const VAPID_PUBLIC = {{ vapid_public | tojson }};
+const TRACKING     = {{ sub.tracking_number | tojson }};
+
+function urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(raw, c => c.charCodeAt(0));
+}
+
+async function subscribePush() {
+  const btn = document.getElementById('notify-btn');
+  const msg = document.getElementById('notify-msg');
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    msg.textContent = 'Push notifications not supported on this browser.';
+    return;
+  }
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    msg.textContent = 'Permission denied — you can enable it in browser settings.';
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+    });
+    await fetch('/subscribe-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tracking: TRACKING, subscription: sub.toJSON() })
+    });
+    btn.innerHTML = '✅ Notifications enabled';
+    btn.style.background = '#DCFCE7';
+    btn.style.borderColor = '#16A34A';
+    btn.style.color = '#166534';
+    btn.disabled = true;
+    msg.textContent = "We'll notify you the moment your report status changes.";
+  } catch(err) {
+    msg.textContent = 'Could not enable notifications. Try again later.';
+  }
+}
 </script>
 </body>
 </html>
