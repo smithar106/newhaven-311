@@ -76,7 +76,7 @@ CATEGORIES = [
     {'id': 'other',             'label': 'Other',                   'icon': '📋',  'color': '#4A5568'},
 ]
 
-STATUSES   = ['Submitted', 'In Review', 'Assigned', 'In Progress', 'Resolved', 'Closed']
+STATUSES   = ['Submitted', 'In Review', 'Assigned', 'In Progress', 'Resolved', 'Closed', 'Withdrawn']
 PRIORITIES = [
     {'id': 'Low',    'color': '#718096', 'bg': '#F7FAFC', 'label': 'Low'},
     {'id': 'Medium', 'color': '#D69E2E', 'bg': '#FFFBEB', 'label': 'Medium'},
@@ -823,6 +823,20 @@ def track():
                            tracking=tracking, statuses=STATUSES,
                            status_index=status_index, city=CITY_NAME,
                            resolution_days=resolution_days)
+
+
+@app.route('/withdraw/<tracking>', methods=['POST'])
+def withdraw(tracking):
+    tracking = tracking.strip().upper()
+    db = get_db()
+    row = db.execute('SELECT * FROM submissions WHERE tracking_number=?', (tracking,)).fetchone()
+    if row and dict(row)['status'] not in ('Resolved', 'Closed', 'Withdrawn'):
+        db.execute(
+            "UPDATE submissions SET status='Withdrawn', notes=?, updated_at=datetime('now') WHERE tracking_number=?",
+            ('Withdrawn by submitter.', tracking)
+        )
+        db.commit()
+    return redirect(f'/track?tracking={tracking}')
 
 
 @app.route('/admin')

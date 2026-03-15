@@ -418,6 +418,44 @@ body {
 
   <a href="/" class="btn btn-primary">Report Another Issue</a>
 
+  {% if sub and sub.status not in ('Resolved', 'Closed', 'Withdrawn') %}
+  <div style="margin-top:var(--sp-3);text-align:center">
+    <button onclick="confirmWithdraw('{{ sub.tracking_number }}')"
+      style="background:none;border:1.5px solid var(--border);border-radius:var(--r-md);
+             padding:10px 20px;font-size:var(--text-sm);color:var(--text-muted);
+             cursor:pointer;font-weight:600;transition:border-color .15s,color .15s"
+      onmouseover="this.style.borderColor='#DC2626';this.style.color='#DC2626'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">
+      Withdraw this report
+    </button>
+    <p style="font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--sp-2)">
+      Only use this if the issue has already been resolved or was submitted by mistake.
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+
+<div id="withdraw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+     z-index:999;align-items:center;justify-content:center;padding:var(--sp-4)">
+  <div style="background:white;border-radius:var(--r-lg);padding:var(--sp-5);max-width:340px;width:100%">
+    <h3 style="margin-bottom:var(--sp-2)">Withdraw this report?</h3>
+    <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--sp-4)">
+      This will mark the report as withdrawn. Use this if the issue was already resolved or submitted by mistake.
+    </p>
+    <form method="POST" id="withdraw-form" action="">
+      <button type="submit"
+        style="width:100%;background:#DC2626;color:white;border:none;border-radius:var(--r-md);
+               padding:12px;font-weight:700;font-size:var(--text-base);cursor:pointer;margin-bottom:var(--sp-2)">
+        Yes, withdraw it
+      </button>
+    </form>
+    <button onclick="document.getElementById('withdraw-modal').style.display='none'"
+      style="width:100%;background:none;border:1.5px solid var(--border);border-radius:var(--r-md);
+             padding:10px;font-weight:600;font-size:var(--text-sm);cursor:pointer;color:var(--text-secondary)">
+      Cancel
+    </button>
+  </div>
 </div>
 
 <div class="footer">
@@ -432,6 +470,12 @@ function doTrack() {
   if (v) window.location.href = `/track?tracking=${encodeURIComponent(v)}`;
 }
 inp.addEventListener('keydown', e => { if (e.key === 'Enter') doTrack(); });
+
+function confirmWithdraw(tracking) {
+  document.getElementById('withdraw-form').action = `/withdraw/${encodeURIComponent(tracking)}`;
+  const modal = document.getElementById('withdraw-modal');
+  modal.style.display = 'flex';
+}
 </script>
 </body>
 </html>

@@ -644,7 +644,7 @@ input[type=file] { display: none }
             <span class="slot-label">Add photo</span>
             <button type="button" class="remove-photo" onclick="removePhoto(event,{{i}})">✕</button>
           </div>
-          <input type="file" name="photo_{{i}}" id="photo-{{i}}" accept="image/*" capture="environment" onchange="previewPhoto({{i}})">
+          <input type="file" name="photo_{{i}}" id="photo-{{i}}" accept="image/*" onchange="previewPhoto({{i}})">
           {% endfor %}
         </div>
       </div>
@@ -678,20 +678,39 @@ input[type=file] { display: none }
           <span class="form-card-title">Contact Info</span>
           <span class="form-card-optional">Optional</span>
         </div>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--sp-3);line-height:1.5">Helps us follow up with updates on your report.</p>
-        <div class="field">
-          <label>Name</label>
-          <input type="text" name="contact_name" placeholder="Your name">
+        <!-- Anonymous toggle -->
+        <label style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-3);cursor:pointer">
+          <input type="checkbox" id="anon-toggle" name="anonymous" value="1" onchange="toggleAnon(this)" style="width:16px;height:16px;accent-color:var(--primary)">
+          <span style="font-size:var(--text-sm);font-weight:600;color:var(--text-primary)">Submit anonymously</span>
+        </label>
+
+        <div id="contact-fields">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" name="contact_name" placeholder="Your name">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" name="contact_email" id="contact-email" placeholder="your@email.com">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input type="tel" name="contact_phone" placeholder="(203) 555-0100">
+          </div>
+          <label style="display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-2);cursor:pointer">
+            <input type="checkbox" name="notify_email" value="1" checked style="width:16px;height:16px;accent-color:var(--primary)">
+            <span style="font-size:var(--text-xs);color:var(--text-secondary)">Email me when my report status changes</span>
+          </label>
         </div>
-        <div class="field">
-          <label>Email <span style="font-weight:400;color:var(--text-muted)">(get notified on updates)</span></label>
-          <input type="email" name="contact_email" placeholder="your@email.com">
-        </div>
-        <div class="field">
-          <label>Phone</label>
-          <input type="tel" name="contact_phone" placeholder="(203) 555-0100">
-        </div>
+
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--sp-3);line-height:1.5">
+          🔒 Your contact info is <strong>private</strong> — used only for status updates and never shared publicly.
+        </p>
       </div>
+
+      <p style="font-size:var(--text-xs);color:var(--text-muted);text-align:center;margin-bottom:var(--sp-3)">
+        ⏱ We aim to acknowledge all reports within 24 hours.
+      </p>
 
       <button type="submit" class="submit-btn" id="submit-btn">Submit Report</button>
     </form>
@@ -864,6 +883,10 @@ document.getElementById('report-form').addEventListener('submit', function(e) {
   btn.disabled = true;
   btn.textContent = 'Submitting…';
 });
+
+function toggleAnon(cb) {
+  document.getElementById('contact-fields').style.display = cb.checked ? 'none' : 'block';
+}
 
 function showToast(msg) {
   const t = document.getElementById('toast');
