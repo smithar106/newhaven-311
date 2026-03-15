@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>{{ page_title }} — {{ city }} 311</title>
+<meta name="theme-color" content="#003087">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F3F4F8;color:#111827;line-height:1.7}
+.top-bar{background:#003087;padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.back-btn{color:rgba(255,255,255,.85);text-decoration:none;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:6px}
+.back-btn:hover{color:#fff}
+.top-bar-title{color:#fff;font-size:.95rem;font-weight:700;margin-left:4px}
+.container{max-width:720px;margin:0 auto;padding:28px 20px 60px}
+.doc-header{margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #E5E7EB}
+.doc-header h1{font-size:1.75rem;font-weight:800;color:#111827;margin-bottom:6px}
+.doc-meta{font-size:.8rem;color:#6B7280;font-weight:500}
+h2{font-size:1.15rem;font-weight:700;color:#111827;margin:28px 0 10px}
+h3{font-size:.95rem;font-weight:700;color:#374151;margin:18px 0 6px}
+p{font-size:.9rem;color:#374151;margin-bottom:12px}
+ul,ol{padding-left:20px;margin-bottom:12px}
+li{font-size:.9rem;color:#374151;margin-bottom:5px}
+strong{color:#111827}
+.section-divider{border:none;border-top:1px solid #E5E7EB;margin:24px 0}
+.callout{background:#FEF3C7;border-left:4px solid #F59E0B;border-radius:6px;padding:14px 16px;margin:16px 0;font-size:.875rem;color:#92400E}
+.callout strong{color:#78350F}
+.contact-box{background:#EBF0FF;border-radius:12px;padding:18px 20px;margin-top:32px;font-size:.875rem;color:#1E3A8A}
+.contact-box a{color:#003087;font-weight:600}
+.legal-nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:32px;padding-top:24px;border-top:1px solid #E5E7EB}
+.legal-nav a{font-size:.78rem;color:#6B7280;text-decoration:none;padding:5px 10px;border-radius:6px;background:#E5E7EB;font-weight:600}
+.legal-nav a:hover{background:#003087;color:#fff}
+.legal-nav a.active{background:#003087;color:#fff}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-btn" href="/">&#8592; {{ city }} 311</a>
+  <span class="top-bar-title">{{ page_title }}</span>
+</div>
+
+<div class="container">
+
+  {% if page == 'privacy' %}
+  <div class="doc-header">
+    <h1>Privacy Policy</h1>
+    <div class="doc-meta">MyCity311 &nbsp;·&nbsp; Last Updated: March 4, 2026 &nbsp;·&nbsp; Effective Date: March 4, 2026</div>
+  </div>
+
+  <h2>1. Introduction</h2>
+  <p>MyCity311 ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use the MyCity311 mobile application and website (collectively, the "Service").</p>
+  <p>Please read this policy carefully. By using MyCity311, you agree to the collection and use of information as described in this policy. If you do not agree, please do not use the Service.</p>
+  <hr class="section-divider">
+
+  <h2>2. Information We Collect</h2>
+  <h3>Information You Provide Directly</h3>
+  <ul>
+    <li><strong>Report content</strong> — descriptions of issues, category selections, and any details you enter when submitting a complaint</li>
+    <li><strong>Photos and media</strong> — images you choose to attach to a report</li>
+    <li><strong>Contact information</strong> — name and email address if you voluntarily provide them for report tracking purposes</li>
+    <li><strong>Tracking number requests</strong> — if you opt in to receive a tracking number via email</li>
+  </ul>
+  <h3>Information Collected Automatically</h3>
+  <ul>
+    <li><strong>Location data</strong> — GPS coordinates at the time of report submission, used to pin the location of the reported issue. We request location access only when you submit a report.</li>
+    <li><strong>Device information</strong> — device type, operating system version, app version, and unique device identifiers</li>
+    <li><strong>Usage data</strong> — pages viewed, features used, time spent in the app, and crash reports</li>
+    <li><strong>IP address</strong> — collected automatically when you access the Service</li>
+  </ul>
+  <h3>Information We Do Not Collect</h3>
+  <ul>
+    <li>We do not collect payment information</li>
+    <li>We do not collect Social Security numbers or government ID</li>
+    <li>We do not knowingly collect data from children under 13</li>
+  </ul>
+  <hr class="section-divider">
+
+  <h2>3. How We Use Your Information</h2>
+  <p>We use the information we collect to:</p>
+  <ul>
+    <li>Process and display your submitted reports</li>
+    <li>Generate and deliver tracking numbers for your submissions</li>
+    <li>Improve the functionality and performance of the Service</li>
+    <li>Analyze usage patterns to enhance the user experience</li>
+    <li>Communicate with you regarding your reports (if you provided contact information)</li>
+    <li>Comply with legal obligations</li>
+    <li>Detect and prevent fraud or misuse of the Service</li>
+  </ul>
+  <hr class="section-divider">
+
+  <h2>4. How We Share Your Information</h2>
+  <h3>Reports Are Publicly Visible</h3>
+  <p>Submitted reports, including their category, description, location, and any attached photos, may be visible to other users of the Service and to the general public. <strong>Do not include sensitive personal information in your report descriptions.</strong></p>
+  <h3>Service Providers</h3>
+  <p>We may share information with third-party vendors who assist us in operating the Service, including cloud hosting providers and analytics services. These providers are contractually obligated to protect your data and may not use it for any other purpose.</p>
+  <h3>City and Government Partners</h3>
+  <p>Where we have established agreements with city governments or municipal agencies, we may share report data with those partners for the purpose of addressing the reported issues. We will disclose which cities are active partners within the app.</p>
+  <h3>Legal Requirements</h3>
+  <p>We may disclose your information if required to do so by law, court order, or governmental authority, or if we believe in good faith that disclosure is necessary to protect our rights, protect your safety or the safety of others, or investigate fraud.</p>
+  <h3>Business Transfers</h3>
+  <p>In the event of a merger, acquisition, or sale of all or a portion of our assets, your information may be transferred as part of that transaction.</p>
+  <h3>We Do Not Sell Your Data</h3>
+  <p>We do not sell, rent, or trade your personal information to third parties for their marketing purposes.</p>
+  <hr class="section-divider">
+
+  <h2>5. Location Data</h2>
+  <p>The Service requests access to your device's location services to automatically populate the location of a reported issue. Location access is requested only at the time of report submission. You may deny location access and enter a location manually. We do not track your location continuously or in the background.</p>
+  <hr class="section-divider">
+
+  <h2>6. Photos and Camera Access</h2>
+  <p>The Service requests camera and photo library access only when you choose to attach a photo to a report. We do not access your camera or photo library at any other time.</p>
+  <hr class="section-divider">
+
+  <h2>7. Data Retention</h2>
+  <p>We retain submitted reports and associated data for a period of up to <strong>3 years</strong> from the date of submission, after which it is deleted or anonymized. You may request deletion of your data at any time by contacting us at <a href="mailto:privacy@mycity311.co">privacy@mycity311.co</a>.</p>
+  <hr class="section-divider">
+
+  <h2>8. Your Rights</h2>
+  <p>Depending on your location, you may have the following rights regarding your personal information:</p>
+  <ul>
+    <li><strong>Access</strong> — request a copy of the data we hold about you</li>
+    <li><strong>Correction</strong> — request correction of inaccurate data</li>
+    <li><strong>Deletion</strong> — request deletion of your data</li>
+    <li><strong>Portability</strong> — request your data in a machine-readable format</li>
+    <li><strong>Opt-out</strong> — opt out of any non-essential data collection</li>
+  </ul>
+  <p>To exercise any of these rights, contact us at <a href="mailto:privacy@mycity311.co">privacy@mycity311.co</a>.</p>
+  <h3>California Residents (CCPA)</h3>
+  <p>If you are a California resident, you have the right to know what personal information we collect, the right to delete it, and the right to opt out of its sale. We do not sell personal information. To submit a CCPA request, contact <a href="mailto:privacy@mycity311.co">privacy@mycity311.co</a>.</p>
+  <h3>European Users (GDPR)</h3>
+  <p>If you are located in the European Economic Area, you have rights under the General Data Protection Regulation including the right to access, rectify, erase, and restrict processing of your data. Our legal basis for processing is your consent and our legitimate interest in operating the Service.</p>
+  <hr class="section-divider">
+
+  <h2>9. Children's Privacy</h2>
+  <p>MyCity311 is not directed to children under the age of 13. We do not knowingly collect personal information from children under 13. If you believe we have inadvertently collected information from a child under 13, please contact us immediately at <a href="mailto:privacy@mycity311.co">privacy@mycity311.co</a> and we will delete it promptly.</p>
+  <hr class="section-divider">
+
+  <h2>10. Security</h2>
+  <p>We implement commercially reasonable technical and organizational measures to protect your information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet or electronic storage is 100% secure. We cannot guarantee absolute security.</p>
+  <hr class="section-divider">
+
+  <h2>11. Third-Party Links and Services</h2>
+  <p>The Service may contain links to third-party websites or services. We are not responsible for the privacy practices of those third parties. We encourage you to review their privacy policies before providing any information.</p>
+  <hr class="section-divider">
+
+  <h2>12. Changes to This Policy</h2>
+  <p>We may update this Privacy Policy from time to time. We will notify you of any material changes by updating the "Last Updated" date at the top of this policy. Your continued use of the Service after any changes constitutes your acceptance of the new policy.</p>
+  <hr class="section-divider">
+
+  <h2>13. Contact Us</h2>
+  <div class="contact-box">
+    <strong>MyCity311</strong><br>
+    Email: <a href="mailto:privacy@mycity311.co">privacy@mycity311.co</a><br>
+    Website: <a href="https://home.mycity311.co">https://home.mycity311.co</a>
+  </div>
+
+  {% elif page == 'terms' %}
+  <div class="doc-header">
+    <h1>Terms of Service</h1>
+    <div class="doc-meta">MyCity311 &nbsp;·&nbsp; Last Updated: March 4, 2026 &nbsp;·&nbsp; Effective Date: March 4, 2026</div>
+  </div>
+
+  <h2>1. Acceptance of Terms</h2>
+  <p>By downloading, installing, or using the MyCity311 mobile application or website (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the Service.</p>
+  <p>We reserve the right to update these Terms at any time. Continued use of the Service after changes are posted constitutes your acceptance of the revised Terms.</p>
+  <hr class="section-divider">
+
+  <h2>2. Description of Service</h2>
+  <p>MyCity311 is a community-based reporting platform that allows residents to submit reports about local issues including potholes, street lighting, trash, graffiti, and other city service concerns. The Service enables users to:</p>
+  <ul>
+    <li>Submit reports with location, category, description, and photos</li>
+    <li>Receive a tracking number for submitted reports</li>
+    <li>View reported issues in their community</li>
+  </ul>
+  <p><strong>MyCity311 is an independent platform and is not an official service of any city, municipality, or government agency</strong>, except where we have entered into a formal written agreement with that entity. Please see our Disclaimer for full details.</p>
+  <hr class="section-divider">
+
+  <h2>3. Eligibility</h2>
+  <p>You must be at least 13 years of age to use the Service. By using the Service, you represent and warrant that you meet this requirement. If you are between 13 and 18, you represent that your parent or guardian has reviewed and agreed to these Terms.</p>
+  <hr class="section-divider">
+
+  <h2>4. User Accounts</h2>
+  <p>The Service may allow you to create an account or use the Service without registration. If you create an account:</p>
+  <ul>
+    <li>You are responsible for maintaining the confidentiality of your credentials</li>
+    <li>You are responsible for all activity that occurs under your account</li>
+    <li>You agree to notify us immediately of any unauthorized use of your account</li>
+    <li>We reserve the right to terminate accounts that violate these Terms</li>
+  </ul>
+  <hr class="section-divider">
+
+  <h2>5. User-Submitted Content</h2>
+  <h3>Your Content</h3>
+  <p>When you submit a report, photo, or any other content through the Service ("User Content"), you retain ownership of that content. However, by submitting it, you grant MyCity311 a worldwide, non-exclusive, royalty-free license to use, store, display, reproduce, and distribute your User Content for the purpose of operating and improving the Service.</p>
+  <h3>Content Standards</h3>
+  <p>You agree that your User Content will not:</p>
+  <ul>
+    <li>Be false, misleading, or fraudulent</li>
+    <li>Contain personally identifiable information about other individuals without their consent</li>
+    <li>Include content that is defamatory, harassing, threatening, or abusive</li>
+    <li>Violate any applicable law or regulation</li>
+    <li>Infringe on any third party's intellectual property rights</li>
+    <li>Contain viruses, malware, or other harmful code</li>
+    <li>Be submitted for any purpose other than good-faith reporting of community issues</li>
+  </ul>
+  <h3>Moderation</h3>
+  <p>We reserve the right to remove any User Content that violates these Terms or that we determine, in our sole discretion, is inappropriate.</p>
+  <hr class="section-divider">
+
+  <h2>6. Prohibited Uses</h2>
+  <p>You agree not to:</p>
+  <ul>
+    <li>Use the Service for any unlawful purpose</li>
+    <li>Submit false or malicious reports</li>
+    <li>Attempt to gain unauthorized access to any part of the Service</li>
+    <li>Use automated tools, bots, or scrapers to access the Service</li>
+    <li>Interfere with or disrupt the integrity or performance of the Service</li>
+    <li>Impersonate any person or entity</li>
+    <li>Use the Service to harass, stalk, or harm any individual</li>
+    <li>Attempt to reverse engineer any part of the Service</li>
+  </ul>
+  <hr class="section-divider">
+
+  <h2>7. No Official Government Affiliation</h2>
+  <p><strong>MyCity311 is not affiliated with, endorsed by, or acting on behalf of any city, county, state, or federal government agency</strong>, unless explicitly stated for a specific city partnership. Submitting a report through MyCity311 does not guarantee that your report will be received, reviewed, or acted upon by any government authority. For official city service requests, please use your city's official 311 system or government website.</p>
+  <hr class="section-divider">
+
+  <h2>8. Intellectual Property</h2>
+  <p>The Service and its original content, features, and functionality are owned by MyCity311 and are protected by United States and international copyright, trademark, and other intellectual property laws. You may not copy, modify, distribute, sell, or lease any part of the Service without our prior written consent.</p>
+  <hr class="section-divider">
+
+  <h2>9. Third-Party Services</h2>
+  <p>The Service may integrate with or link to third-party services, including mapping providers and cloud platforms. Your use of those services is governed by their respective terms and privacy policies. MyCity311 is not responsible for the content or practices of any third-party services.</p>
+  <hr class="section-divider">
+
+  <h2>10. Disclaimer of Warranties</h2>
+  <p>THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.</p>
+  <p>WE DO NOT WARRANT THAT: THE SERVICE WILL BE UNINTERRUPTED OR ERROR-FREE; REPORTS SUBMITTED WILL BE RECEIVED OR ACTED UPON BY ANY GOVERNMENT ENTITY; THE SERVICE WILL MEET YOUR SPECIFIC REQUIREMENTS; OR ANY DEFECTS WILL BE CORRECTED.</p>
+  <hr class="section-divider">
+
+  <h2>11. Limitation of Liability</h2>
+  <p>TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, MYCITY311 AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, LOSS OF REVENUE, OR PERSONAL INJURY, ARISING OUT OF OR RELATED TO YOUR USE OF THE SERVICE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+  <p>OUR TOTAL LIABILITY TO YOU FOR ANY CLAIMS ARISING OUT OF OR RELATED TO THESE TERMS OR THE SERVICE SHALL NOT EXCEED $100.</p>
+  <hr class="section-divider">
+
+  <h2>12. Indemnification</h2>
+  <p>You agree to indemnify and hold harmless MyCity311 and its officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses, including reasonable legal fees, arising out of or related to your use of the Service or violation of these Terms.</p>
+  <hr class="section-divider">
+
+  <h2>13. Governing Law</h2>
+  <p>These Terms shall be governed by and construed in accordance with the laws of the State of Maryland, without regard to its conflict of law provisions. Any disputes arising under these Terms shall be resolved exclusively in the state or federal courts located in Prince Georges County, Maryland.</p>
+  <hr class="section-divider">
+
+  <h2>14. Dispute Resolution</h2>
+  <p>Any dispute arising out of or relating to these Terms or the Service that cannot be resolved informally shall be resolved through binding arbitration administered by the American Arbitration Association under its Consumer Arbitration Rules, rather than in court, except that either party may seek injunctive or other equitable relief in any court of competent jurisdiction.</p>
+  <hr class="section-divider">
+
+  <h2>15. Severability</h2>
+  <p>If any provision of these Terms is found to be unenforceable, the remaining provisions will remain in full force and effect.</p>
+  <hr class="section-divider">
+
+  <h2>16. Entire Agreement</h2>
+  <p>These Terms, together with our Privacy Policy and Disclaimer, constitute the entire agreement between you and MyCity311 regarding the Service and supersede all prior agreements.</p>
+  <hr class="section-divider">
+
+  <h2>17. Contact Us</h2>
+  <div class="contact-box">
+    <strong>MyCity311</strong><br>
+    Email: <a href="mailto:legal@mycity311.co">legal@mycity311.co</a><br>
+    Website: <a href="https://home.mycity311.co">https://home.mycity311.co</a>
+  </div>
+
+  {% elif page == 'disclaimer' %}
+  <div class="doc-header">
+    <h1>Disclaimer</h1>
+    <div class="doc-meta">MyCity311 &nbsp;·&nbsp; Last Updated: March 4, 2026</div>
+  </div>
+
+  <h2>Independent Platform — Not an Official Government Service</h2>
+  <p>MyCity311 is an <strong>independent, privately operated civic reporting platform</strong>. It is not affiliated with, endorsed by, sponsored by, or acting on behalf of any city, municipality, county, state, or federal government agency.</p>
+  <hr class="section-divider">
+
+  <h2>Reports May Not Reach City Officials</h2>
+  <div class="callout">
+    <strong>Submitting a report through MyCity311 does not guarantee that your report will be received, reviewed, or acted upon by any government authority or city department.</strong>
+  </div>
+  <p>MyCity311 facilitates community reporting and works to establish partnerships with city governments to route reports to the appropriate departments. However, unless your city has a formal, active partnership agreement with MyCity311, reports submitted through this app are not automatically forwarded to city staff.</p>
+  <p>If you need to report an urgent issue that requires immediate government response — including public safety emergencies, downed power lines, gas leaks, or other hazardous conditions — please contact:</p>
+  <ul>
+    <li><strong>Emergency services: 911</strong></li>
+    <li><strong>Your city's official 311 system or non-emergency line</strong></li>
+    <li><strong>Your local government's official website</strong></li>
+  </ul>
+  <hr class="section-divider">
+
+  <h2>No Government Endorsement</h2>
+  <p>The MyCity311 name, logo, and branding are not affiliated with any official government "311" service. The use of "311" refers to the common civic reporting convention and does not imply a connection to any official city hotline or service center.</p>
+  <hr class="section-divider">
+
+  <h2>Accuracy of Information</h2>
+  <p>MyCity311 makes no representations or warranties regarding the accuracy, completeness, or timeliness of any reports submitted by users. User-submitted content reflects the views and observations of individual users and does not represent the views of MyCity311 or any government entity.</p>
+  <hr class="section-divider">
+
+  <h2>No Emergency Services</h2>
+  <div class="callout">
+    <strong>MyCity311 is not an emergency response platform.</strong> Do not use MyCity311 to report emergencies. For all emergencies, call 911 immediately.
+  </div>
+  <hr class="section-divider">
+
+  <h2>City Partnership Status</h2>
+  <p>MyCity311 is actively working to establish formal partnerships with city governments across the United States. Cities with active partnerships will be clearly identified within the app. For all other cities, MyCity311 operates as a community-driven reporting tool only.</p>
+  <p>If you represent a city government and are interested in a formal partnership, please contact us at <a href="mailto:partnerships@mycity311.co">partnerships@mycity311.co</a>.</p>
+  <hr class="section-divider">
+
+  <h2>Limitation of Responsibility</h2>
+  <p>MyCity311 shall not be held responsible for:</p>
+  <ul>
+    <li>Any failure of a government agency to respond to or act on a submitted report</li>
+    <li>Any damages or losses resulting from reliance on the Service as an official reporting channel</li>
+    <li>The accuracy or completeness of user-submitted reports</li>
+    <li>Any delays in report routing or processing</li>
+  </ul>
+  <hr class="section-divider">
+
+  <h2>Contact</h2>
+  <div class="contact-box">
+    <strong>MyCity311</strong><br>
+    Email: <a href="mailto:legal@mycity311.co">legal@mycity311.co</a><br>
+    Website: <a href="https://home.mycity311.co">https://home.mycity311.co</a>
+  </div>
+
+  {% endif %}
+
+  <div class="legal-nav">
+    <a href="/privacy-policy" {% if page == 'privacy' %}class="active"{% endif %}>Privacy Policy</a>
+    <a href="/terms-of-service" {% if page == 'terms' %}class="active"{% endif %}>Terms of Service</a>
+    <a href="/disclaimer" {% if page == 'disclaimer' %}class="active"{% endif %}>Disclaimer</a>
+  </div>
+
+</div>
+</body>
+</html>

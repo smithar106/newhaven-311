@@ -663,6 +663,204 @@ def send_status_update_email(to_email, tracking, category_label, address, new_st
         pass
 
 
+# ── New Haven alder + SeeClickFix shadow routing ──────────────────────────────
+
+NEW_HAVEN_ALDERS = {
+    1:  {"name": "Kiana E. Flores",          "email": "kiana.flores@newhavenct.gov"},
+    2:  {"name": "Frank E. Douglass Jr.",     "email": "frank.douglass@newhavenct.gov"},
+    3:  {"name": "Ron Hurt",                  "email": "ron.hurt@newhavenct.gov"},
+    4:  {"name": "Evelyn Rodriguez",          "email": "evelyn.rodriguez@newhavenct.gov"},
+    5:  {"name": "Kampton Singh",             "email": "kampton.singh@newhavenct.gov"},
+    6:  {"name": "Carmen Rodriguez",          "email": "carmen.rodriguez@newhavenct.gov"},
+    7:  {"name": "Christine Kim",             "email": "christine.kim@newhavenct.gov"},
+    8:  {"name": "Ellen Cupo",                "email": "ellen.cupo@newhavenct.gov"},
+    9:  {"name": "Caroline T. Smith",         "email": "caroline.smith@newhavenct.gov"},
+    10: {"name": "Anna M. Festa",             "email": "anna.festa@newhavenct.gov"},
+    11: {"name": "Henry Murphy",              "email": "henry.murphy@newhavenct.gov"},
+    12: {"name": "Theresa L. Morant",         "email": "theresa.morant@newhavenct.gov"},
+    13: {"name": "Rosa Ferraro Santana",      "email": "rosa.ferrarosantana@newhavenct.gov"},
+    14: {"name": "Sarah A. Miller",           "email": "sarah.miller@newhavenct.gov"},
+    15: {"name": "Frank R. Redente",          "email": "frank.redente@newhavenct.gov"},
+    16: {"name": "José L. Crespo",            "email": "jose.crespo@newhavenct.gov"},
+    17: {"name": "Salvatore C. Punzo",        "email": "salvatore.punzo@newhavenct.gov"},
+    18: {"name": "Salvatore E. DeCola",       "email": "salvatore.decola@newhavenct.gov"},
+    19: {"name": "Kimberly R. Edwards",       "email": "kimberly.edwards@newhavenct.gov"},
+    20: {"name": "Brittiany Mabery-Niblack",  "email": "brittiany.maberyniblack@newhavenct.gov"},
+    21: {"name": "Maceo Troy Streater",       "email": "maceo.streater@newhavenct.gov"},
+    22: {"name": "Jeanette L. Morrison",      "email": "jeanette.morrison@newhavenct.gov"},
+    23: {"name": "Tyisha Walker-Myers",       "email": "tyisha.walkermyers@newhavenct.gov"},
+    24: {"name": "Evette T. Hamilton",        "email": "evette.hamilton@newhavenct.gov"},
+    25: {"name": "Adam J. Marchand",          "email": "adam.marchand@newhavenct.gov"},
+    26: {"name": "Amy D. Marx",               "email": "amy.marx@newhavenct.gov"},
+    27: {"name": "Richard W. Furlow",         "email": "richard.furlow@newhavenct.gov"},
+    28: {"name": "Thomas R. Ficklin Jr.",     "email": "thomas.ficklin@newhavenct.gov"},
+    29: {"name": "Brian Wingate",             "email": "brian.wingate@newhavenct.gov"},
+    30: {"name": "Honda Smith",               "email": "honda.smith@newhavenct.gov"},
+}
+
+# Maps app category IDs to SeeClickFix request type IDs for New Haven
+SEECLICKFIX_CATEGORY_MAP = {
+    'pothole':           116,
+    'streetlight':       124,
+    'graffiti':          122,
+    'abandoned_vehicle': 55392,
+    'illegal_dumping':   1250,
+    'missed_pickup':     38051,
+    'park_damage':       126,
+    'noise':             28079,
+    'sidewalk':          117,
+}
+
+_NH_WARD_CACHE = os.path.join(os.path.dirname(__file__), 'newhaven_ward_boundaries.json')
+_nh_ward_geojson = None
+
+
+def _load_nh_wards():
+    global _nh_ward_geojson
+    if _nh_ward_geojson is not None:
+        return _nh_ward_geojson
+    if os.path.exists(_NH_WARD_CACHE):
+        try:
+            with open(_NH_WARD_CACHE) as f:
+                _nh_ward_geojson = json.load(f)
+            return _nh_ward_geojson
+        except Exception:
+            pass
+    try:
+        import urllib.request
+        url = ("https://maps.newhavenct.gov/arcgis/rest/services/"
+               "Planning/wards/MapServer/0/query"
+               "?where=1%3D1&outFields=WARD&outSR=4326&f=geojson")
+        with urllib.request.urlopen(url, timeout=10) as r:
+            data = json.loads(r.read())
+        with open(_NH_WARD_CACHE, 'w') as f:
+            json.dump(data, f)
+        _nh_ward_geojson = data
+    except Exception:
+        _nh_ward_geojson = {}
+    return _nh_ward_geojson
+
+
+def _nh_point_in_polygon(x, y, ring):
+    inside = False
+    j = len(ring) - 1
+    for i in range(len(ring)):
+        xi, yi = ring[i][0], ring[i][1]
+        xj, yj = ring[j][0], ring[j][1]
+        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+def get_nh_ward(lat, lng):
+    data = _load_nh_wards()
+    if not data or 'features' not in data:
+        return None
+    for feature in data.get('features', []):
+        props = feature.get('properties', {})
+        ward = props.get('WARD') or props.get('ward') or props.get('WARD_NUM')
+        geom = feature.get('geometry', {})
+        gtype = geom.get('type', '')
+        coords = geom.get('coordinates', [])
+        rings = coords if gtype == 'Polygon' else [r for poly in coords for r in poly]
+        for ring in rings:
+            if _nh_point_in_polygon(lng, lat, ring):
+                try:
+                    return int(ward)
+                except (TypeError, ValueError):
+                    return None
+    return None
+
+
+def send_alder_notification(alder_name, alder_email, tracking,
+                             category_label, address, description,
+                             submitter_email, ward):
+    if not SMTP_USER or not SMTP_PASS or not alder_email:
+        return
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        ticket_url = f"https://newhaven.mycity311.co/track?tracking={tracking}"
+        subject    = f"[New Haven Resident Report — Ward {ward}] {category_label} — {tracking}"
+
+        html_body = f"""
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F7;margin:0;padding:20px">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+    <div style="background:#00356B;padding:20px 24px">
+      <h1 style="color:#fff;font-size:1.1rem;margin:0">New Haven Resident Report — Ward {ward}</h1>
+    </div>
+    <div style="padding:24px">
+      <p style="font-size:.9rem;color:#4A5568;margin-bottom:16px">
+        Hi {alder_name},<br><br>
+        A New Haven resident in <strong>Ward {ward}</strong> submitted a <strong>{category_label}</strong>
+        report via MyCity311. This is forwarded to you as their alder.
+      </p>
+      <table style="width:100%;font-size:.88rem;border-collapse:collapse;background:#F7FAFC;border-radius:8px;overflow:hidden">
+        <tr><td style="padding:10px 14px;color:#718096;font-weight:600;width:120px;border-bottom:1px solid #E2E8F0">Tracking</td><td style="padding:10px 14px;font-family:monospace;font-weight:700;color:#00356B;border-bottom:1px solid #E2E8F0">{tracking}</td></tr>
+        <tr><td style="padding:10px 14px;color:#718096;font-weight:600;border-bottom:1px solid #E2E8F0">Category</td><td style="padding:10px 14px;font-weight:600;border-bottom:1px solid #E2E8F0">{category_label}</td></tr>
+        {"<tr><td style='padding:10px 14px;color:#718096;font-weight:600;border-bottom:1px solid #E2E8F0'>Location</td><td style='padding:10px 14px;border-bottom:1px solid #E2E8F0'>" + address + "</td></tr>" if address else ""}
+        {"<tr><td style='padding:10px 14px;color:#718096;font-weight:600;border-bottom:1px solid #E2E8F0'>Description</td><td style='padding:10px 14px;border-bottom:1px solid #E2E8F0'>" + description + "</td></tr>" if description else ""}
+        {"<tr><td style='padding:10px 14px;color:#718096;font-weight:600'>Resident email</td><td style='padding:10px 14px'><a href='mailto:" + submitter_email + "'>" + submitter_email + "</a></td></tr>" if submitter_email else ""}
+      </table>
+      <div style="margin:20px 0 0;text-align:center">
+        <a href="{ticket_url}" style="display:inline-block;background:#00356B;color:#fff;text-decoration:none;border-radius:10px;padding:12px 24px;font-weight:700;font-size:.9rem">View Full Report</a>
+      </div>
+      <p style="font-size:.78rem;color:#A0AEC0;text-align:center;margin-top:16px;line-height:1.6">
+        Forwarded by MyCity311 · mycity311.co<br>
+        Residents in Ward {ward} are already using this platform to report city issues.
+      </p>
+    </div>
+  </div>
+</body></html>"""
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From']    = f"New Haven 311 Reports <{MAIL_FROM}>"
+        msg['To']      = alder_email
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(MAIL_FROM, alder_email, msg.as_string())
+    except Exception:
+        pass
+
+
+def submit_to_seeclickfix_newhaven(lat, lng, category_id, category_label, description, address):
+    """Submit ticket to SeeClickFix via the New Haven API. Silent fail."""
+    request_type_id = SEECLICKFIX_CATEGORY_MAP.get(category_id)
+    if not request_type_id:
+        return None
+    try:
+        import urllib.request
+        payload = json.dumps({
+            "issue": {
+                "request_type_id": request_type_id,
+                "summary": category_label,
+                "description": (description or category_label)[:500],
+                "lat": lat,
+                "lng": lng,
+                "address": address,
+                "place_url": "new-haven",
+            }
+        }).encode()
+        req = urllib.request.Request(
+            "https://seeclickfix.com/api/v2/issues",
+            data=payload,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=8) as r:
+            return json.loads(r.read())
+    except Exception:
+        return None
+
+
 # ── template globals ──────────────────────────────────────────────────────────
 @app.context_processor
 def inject_globals():
@@ -759,6 +957,29 @@ def submit():
                 contact_email, CITY_NAME
             )
 
+    # ── shadow route to New Haven alder by GPS ────────────────────────────────
+    if lat and lng:
+        try:
+            ward = get_nh_ward(float(lat), float(lng))
+            if ward and ward in NEW_HAVEN_ALDERS:
+                al = NEW_HAVEN_ALDERS[ward]
+                send_alder_notification(
+                    al['name'], al['email'], tracking,
+                    cat_label, address, description,
+                    contact_email, ward
+                )
+        except Exception:
+            pass
+
+    # ── submit to SeeClickFix (New Haven's active 311 backend) ────────────────
+    if lat and lng:
+        try:
+            submit_to_seeclickfix_newhaven(
+                float(lat), float(lng), cat, cat_label, description, address
+            )
+        except Exception:
+            pass
+
     return redirect(url_for('confirm', tracking=tracking))
 
 
@@ -795,6 +1016,19 @@ def confirm(tracking):
     cat_obj = next((c for c in CATEGORIES if c['id'] == sub['category']), None)
     return render_template('confirm.html', sub=sub, cat=cat_obj,
                            city=CITY_NAME, vapid_public=VAPID_PUBLIC)
+
+
+@app.route('/privacy-policy')
+def privacy_policy():
+    return render_template('legal.html', page='privacy', page_title='Privacy Policy', city=CITY_NAME)
+
+@app.route('/terms-of-service')
+def terms_of_service():
+    return render_template('legal.html', page='terms', page_title='Terms of Service', city=CITY_NAME)
+
+@app.route('/disclaimer')
+def disclaimer():
+    return render_template('legal.html', page='disclaimer', page_title='Disclaimer', city=CITY_NAME)
 
 
 @app.route('/track')
